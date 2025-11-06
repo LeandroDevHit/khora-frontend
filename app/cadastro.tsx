@@ -13,34 +13,29 @@ import {
   View,
 } from "react-native";
 
-const Login: React.FC = () => {
+const Cadastro: React.FC = () => {
   const router = useRouter();
 
-  // 1. Estados tipados para E-mail e Senha
   const [email, setEmail] = useState<string>("");
+  const [nome, setNome] = useState<string>("");
   const [senha, setSenha] = useState<string>("");
 
-  const handleLogin = () => {
-    // Aqui você faria a validação e a chamada à API para autenticação
-    console.log("Tentativa de Login:", { email, senha });
-
-    // Navega para a home screen após o login bem-sucedido
-    router.push("/tabs/home");
+  const handleCadastro = () => {
+    console.log("Dados de Cadastro:", { email, nome, senha });
+    router.push("/quest");
   };
 
   return (
-    // KeyboardAvoidingView para responsividade ao teclado
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
-      {/* ⬅️ Botão de Voltar/Sair */}
+      {/* ⬅️ Botão de Voltar/Sair (Geralmente leva para a tela anterior no stack) */}
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="#334D6E" />
       </TouchableOpacity>
 
-      {/* ScrollView para garantir a rolagem e centralização */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentWrapper}>
           {/* 🚀 Logo/Inicial 'K' */}
@@ -48,9 +43,9 @@ const Login: React.FC = () => {
             <Text style={styles.logoText}>K</Text>
           </View>
 
-          <Text style={styles.title}>Bem-vindo de volta</Text>
+          <Text style={styles.title}>Crie sua conta</Text>
           <Text style={styles.subtitle}>
-            Entre para continuar sua jornada de autocuidado.
+            Junte-se ao seu novo espaço de autocuidado.
           </Text>
 
           {/* 📧 Campo E-mail */}
@@ -64,6 +59,16 @@ const Login: React.FC = () => {
             autoCapitalize="none"
           />
 
+          {/* 👤 Campo Nome */}
+          <TextInput
+            style={styles.input}
+            placeholder="Nome"
+            placeholderTextColor="#697B8C"
+            value={nome}
+            onChangeText={setNome}
+            autoCapitalize="words"
+          />
+
           {/* 🔒 Campo Senha */}
           <TextInput
             style={styles.input}
@@ -74,32 +79,40 @@ const Login: React.FC = () => {
             secureTextEntry={true}
           />
 
-          {/* Botão Entrar - Cor Primária Khora */}
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Entrar</Text>
+          {/* Botão Cadastrar - Cor Primária Khora */}
+          <TouchableOpacity style={styles.button} onPress={handleCadastro}>
+            <Text style={styles.buttonText}>Cadastrar</Text>
           </TouchableOpacity>
 
-          {/* Link para Cadastro */}
+          {/* Link para Login - CORREÇÃO DE NAVEGAÇÃO */}
           <TouchableOpacity
-            // Navega diretamente para /cadastro
-            onPress={() => router.push("/cadastro")}
-            style={{ marginTop: 20 }}
+            // >>> MUDANÇA AQUI: Navega diretamente para /login <<<
+            onPress={() => router.push("/login")}
+            style={{ marginBottom: 20 }}
           >
-            <Text style={styles.signupLinkText}>
-              Não tem uma conta?{" "}
-              <Text style={styles.signupLinkHighlight}>Criar conta</Text>
+            <Text style={styles.loginLinkText}>
+              Já tem uma conta?{" "}
+              <Text style={styles.loginLinkHighlight}>Entrar</Text>
             </Text>
           </TouchableOpacity>
+
+          {/* ✅ Garantia de Privacidade */}
+          <View style={styles.privacyContainer}>
+            <Ionicons
+              name="checkmark-circle"
+              size={14}
+              color="#28a745"
+              style={styles.checkmarkIcon}
+            />
+            <Text style={styles.privacyText}>Sua privacidade é garantida.</Text>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-// ---
-// TIPAGEM E ESTILOS (Reaproveitando o padrão da tela de Cadastro)
-// ---
-
+// Tipagem para Styles (mantida inalterada)
 interface Style {
   container: ViewStyle;
   scrollContent: ViewStyle;
@@ -112,8 +125,11 @@ interface Style {
   input: TextStyle;
   button: ViewStyle;
   buttonText: TextStyle;
-  signupLinkText: TextStyle;
-  signupLinkHighlight: TextStyle;
+  loginLinkText: TextStyle;
+  loginLinkHighlight: TextStyle;
+  privacyContainer: ViewStyle;
+  checkmarkIcon: TextStyle;
+  privacyText: TextStyle;
 }
 
 const styles = StyleSheet.create<Style>({
@@ -151,7 +167,7 @@ const styles = StyleSheet.create<Style>({
   logoText: {
     fontSize: 35,
     fontWeight: "bold",
-    color: "#3b82f6",
+    color: "#4A90E2",
   },
   title: {
     fontSize: 28,
@@ -183,20 +199,34 @@ const styles = StyleSheet.create<Style>({
     borderRadius: 10,
     width: "100%",
     alignItems: "center",
+    marginTop: 30,
+    marginBottom: 20,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
-  signupLinkText: {
+  loginLinkText: {
     color: "#697B8C",
     fontSize: 14,
   },
-  signupLinkHighlight: {
+  loginLinkHighlight: {
     color: "#4A90E2",
     fontWeight: "bold",
   },
+  privacyContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  checkmarkIcon: {
+    marginRight: 5,
+  },
+  privacyText: {
+    fontSize: 12,
+    color: "#697B8C",
+  },
 });
 
-export default Login;
+export default Cadastro;
