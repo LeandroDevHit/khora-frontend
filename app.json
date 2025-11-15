@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "khora-frontend",
+    "name": "khora",
     "slug": "khora-frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logoKhora.png",
     "scheme": "khorafrontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/logoKhora.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

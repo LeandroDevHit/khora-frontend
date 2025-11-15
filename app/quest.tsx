@@ -61,8 +61,9 @@ export default function Quest() {
       setStep(step + 1);
     } else {
       console.log({ idadeSelecionada, altura, peso, vicios });
-      // Quando terminar, navega para a Home
-      router.push("/tabs/home");
+      // Quando terminar, navega para a Home (usar /tabs como workaround de teste)
+      // Se o app crashar aqui, mudar para '/tabs' evita carregar uma tela específica
+      router.push("/tabs" as any);
     }
   };
 
