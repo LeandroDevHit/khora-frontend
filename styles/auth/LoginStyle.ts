@@ -37,7 +37,7 @@ export const style = StyleSheet.create({
   label: {
     fontSize: 16,
     color: Colors.textPrimary,
-    marginBottom: 8,
+    marginVertical: 12,
   },
   passwordLabelContainer: {
     flexDirection: "row",

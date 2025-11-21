@@ -22,6 +22,7 @@ export const Colors = {
   textSecondary: '#5A5A5A',
   textLight: '#9E9E9E',
   textWhite: '#FFFFFF',
+  textDisabled: '#B0B0B0', // Adiciona uma cor para texto desabilitado
 
   // Cores de Estado
   success: '#4CAF50',

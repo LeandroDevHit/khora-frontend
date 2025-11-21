@@ -1,3 +1,6 @@
+import { useAlert } from "@/contexts/AlertContext";
+import { useUserContext } from "@/contexts/UserContext";
+import { resetPassword } from "@/services/authService";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -7,16 +10,74 @@ import CustomInput from "../../components/CustomInput";
 import { Colors } from "../../constants/GlobalStyles";
 import { style as resetStyle } from "../../styles/auth/NewPasswordStyle";
 
+interface ResetPasswordResponse {
+  message: string;
+}
+
 export default function ResetPassword() {
   const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { showSuccess, showError } = useAlert();
+  const { userId } = useUserContext();
 
-  const handleResetPassword = () => {
-    console.log("Redefinir senha");
-    // Lógica para redefinir senha
-    // Após sucesso, navegar para login
-    router.push("/auth/login" as any);
+  const handleResetPassword = async () => {
+    try {
+      if (!userId || !newPassword || !confirmPassword) {
+        showError(
+          "Erro ao redefinir senha",
+          "Todos os campos são obrigatórios."
+        );
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showError("Erro ao redefinir senha", "As senhas não coincidem.");
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        showError(
+          "Erro ao redefinir senha",
+          "A senha deve ter no mínimo 8 caracteres."
+        );
+        return;
+      }
+
+      if (!/[A-Z]/.test(newPassword)) {
+        showError(
+          "Erro ao redefinir senha",
+          "A senha deve conter pelo menos uma letra maiúscula."
+        );
+        return;
+      }
+
+      if (!/[0-9]/.test(newPassword)) {
+        showError(
+          "Erro ao redefinir senha",
+          "A senha deve conter pelo menos um número."
+        );
+        return;
+      }
+
+      const response = (await resetPassword(
+        userId,
+        newPassword,
+        confirmPassword
+      )) as ResetPasswordResponse;
+
+      const { message } = response;
+
+      showSuccess("Sucesso!", message);
+      setTimeout(() => {
+        router.push("/auth/login" as any);
+      }, 2000);
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Erro ao redefinir senha. Tente novamente.";
+      showError("Erro ao redefinir senha", errorMessage);
+    }
   };
 
   const handleBackToLogin = () => {

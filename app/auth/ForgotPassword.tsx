@@ -1,20 +1,45 @@
+import React, { useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import CustomButton from "../../components/Button";
 import CustomInput from "../../components/CustomInput";
 import { Colors } from "../../constants/GlobalStyles";
 import { style as resetStyle } from "../../styles/auth/ForgotPasswordStyle";
+import { useAlert } from "@/contexts/AlertContext";
+import { sendResetPassword } from "@/services/authService";
+import { useUserContext } from "@/contexts/UserContext";
+
+interface ForgotPasswordProps {
+  message: string;
+}
 
 export default function ForgotPassword() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const {userEmail, setUserEmail} = useUserContext();
+  const { showSuccess, showError } = useAlert();
 
-  const handleSendCode = () => {
-    console.log("Enviar código para:", email);
-    // Lógica para enviar código de reset
-    router.push("/auth/VerifyCode" as any);
+  const handleSendCode = async () => {
+    try {
+      if (!email) {
+        showError("Erro ao cadastrar", "Todos os campos são obrigatórios");
+      }
+
+      const response = await sendResetPassword(email);
+      const { message } = response as ForgotPasswordProps;
+
+      setUserEmail(email)
+
+      showSuccess("Sucesso!", message);
+      setTimeout(() => {
+        router.push("/auth/VerifyCode");
+      }, 2000);
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Erro ao cadastrar. Tente novamente.";
+      showError("Erro ao cadastrar", errorMessage);
+    }
   };
 
   const handleBackToLogin = () => {
@@ -76,7 +101,7 @@ export default function ForgotPassword() {
         <View style={resetStyle.infoContainer}>
           <MaterialIcons name="info" size={16} color={Colors.textSecondary} />
           <Text style={resetStyle.infoText}>
-            O código será enviado para o email cadastrado e expira em 5 minutos.
+            O código será enviado para o email cadastrado e expira em 3 minutos.
           </Text>
         </View>
       </View>

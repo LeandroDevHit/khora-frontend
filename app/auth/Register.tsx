@@ -6,6 +6,12 @@ import CustomButton from "../../components/Button";
 import CustomInput from "../../components/CustomInput";
 import { Colors } from "../../constants/GlobalStyles";
 import { style as registerStyle } from "../../styles/auth/RegisterStyle";
+import { useAlert } from "@/contexts/AlertContext";
+import { registerUser } from "@/services/authService";
+
+interface RegisterProps {
+  message: string;
+}
 
 export default function Register() {
   const router = useRouter();
@@ -13,10 +19,29 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { showSuccess, showError } = useAlert();
 
-  const handleRegister = () => {
-    console.log("Cadastro com email/senha");
-    // lógica de cadastro
+  const handleRegister = async () => {
+    try {
+      if (!name || !email || !password || !confirmPassword) {
+        showError("Erro ao cadastrar", "Todos os campos são obrigatórios");
+      }
+      if (password !== confirmPassword) {
+        showError("Erro ao cadastrar", "As senhas não coincidem");
+      }
+
+      const response = await registerUser(name, email, password);
+      const { message } = response as RegisterProps;
+
+      showSuccess("Sucesso!", message);
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 2000);
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Erro ao cadastrar. Tente novamente.";
+      showError("Erro ao cadastrar", errorMessage);
+    }
   };
 
   const handleGoogleRegister = () => {

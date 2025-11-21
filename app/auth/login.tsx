@@ -1,3 +1,4 @@
+import { authenticateUser } from "@/services/authService";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -5,18 +6,50 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import CustomButton from "../../components/Button";
 import CustomInput from "../../components/CustomInput";
 import { Colors } from "../../constants/GlobalStyles";
+import { useAlert } from "../../contexts/AlertContext";
+import { useUserContext } from "../../contexts/UserContext";
 import { style as loginStyle } from "../../styles/auth/LoginStyle";
 
 export default function Login() {
   const router = useRouter();
+  const { showSuccess, showError } = useAlert();
+  const { setUserEmail, setUserId } = useUserContext();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [password_hash, setPassword] = useState("");
 
-  const handleLogin = () => {
-    console.log("Login com email/senha");
-    // lógica de login
-    // Navegar para a página de Onboarding
-    router.push("/quest" as any);
+  interface LoginResponse {
+    message: string;
+    requiresTwoFactor: boolean;
+    userId: string;
+  }
+
+  const handleLogin = async () => {
+    if (!email || !password_hash) {
+      showError("Campos obrigatórios", "Email e senha são obrigatórios");
+      return;
+    }
+
+    try {
+      // Autentica o usuário
+      const response = await authenticateUser(email, password_hash);
+      const { message, requiresTwoFactor, userId } = response as LoginResponse;
+
+      // Armazena o e-mail e o userId no contexto do usuário
+      setUserEmail(email);
+      setUserId(userId);
+
+      showSuccess("Sucesso!", message);
+
+      if (requiresTwoFactor) {
+        setTimeout(() => {
+          router.push("/auth/TwoFactorAuth" as any);
+        }, 2000);
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Erro ao autenticar. Tente novamente.";
+      showError("Login incorreto", errorMessage);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -73,7 +106,7 @@ export default function Login() {
 
           <CustomInput
             placeholder="********"
-            value={password}
+            value={password_hash}
             onChangeText={setPassword}
             accessibilityLabel="Digite sua senha"
             width="100%"

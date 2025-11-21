@@ -59,7 +59,7 @@ export const style = StyleSheet.create({
   formContainer: {
     width: "100%",
     gap: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
 
   label: {
@@ -110,5 +110,23 @@ export const style = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: "center",
     lineHeight: 18,
+  },
+
+  timerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: Spacing.md,
+  },
+  timerText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  timerExpired: {
+    color: Colors.error,
+  },
+  linkDisabled: {
+    color: Colors.textDisabled,
   },
 });
