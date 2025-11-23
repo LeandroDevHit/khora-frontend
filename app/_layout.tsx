@@ -2,6 +2,7 @@ import { AlertProvider } from "@/contexts/AlertContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { Stack } from "expo-router";
 import React from "react";
+import FloatingChatButton from "@/components/FloatingChatButton";
 
 export default function RootLayout() {
   return (
@@ -19,6 +20,7 @@ export default function RootLayout() {
           <Stack.Screen name="perfil" />
           <Stack.Screen name="quest" />
         </Stack>
+        <FloatingChatButton />
       </AlertProvider>
     </UserProvider>
   );
