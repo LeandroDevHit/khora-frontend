@@ -1,31 +1,30 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
   Dimensions,
-  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
-// Removida importação de 'fetchUserMetas' que não é usada neste bloco
 import { LineChart } from "react-native-gifted-charts";
-import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-export default function MetasScreen() { // Mantendo MetasScreen como nome
+export default function MetasScreen() {
+
   const [pesoAtual, setPesoAtual] = useState<number>(75);
   const [metaPeso, setMetaPeso] = useState<number>(70);
-
   const data = [80, 75, 78, 74, 76, 72];
+  const router = useRouter();
 
   useEffect(() => {
     // load real data here if needed
   }, []);
 
-  // Garantir que a porcentagem não exceda 100%
-  const progressPercent = Math.min(100, ((pesoAtual - metaPeso) / (80 - metaPeso)) * 100); // Lógica de progresso baseada em peso
+  const progressPercent = Math.min(100, ((pesoAtual - metaPeso) / (80 - metaPeso)) * 100);
 
   return (
     <View style={styles.screen}>
@@ -97,21 +96,23 @@ export default function MetasScreen() { // Mantendo MetasScreen como nome
         <Text style={styles.sectionTitle}>Atalhos</Text>
 
         <View style={styles.atalhosRow}>
-          <View style={styles.atalhoItem}>
+          <TouchableOpacity style={styles.atalhoItem} onPress={() => router.push('/programas' as any)}>
             <View style={styles.atalhoIconWrap}><Ionicons name="book" size={20} color="#3A80F9" /></View>
             <Text style={styles.atalhoTxt}>Programas</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.atalhoItem}>
+          <TouchableOpacity style={styles.atalhoItem} onPress={() => router.push('/conquistas' as any)}>
             <View style={styles.atalhoIconWrap}><Ionicons name="trophy" size={20} color="#3A80F9" /></View>
             <Text style={styles.atalhoTxt}>Conquistas</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.atalhoItem}>
+          <TouchableOpacity style={styles.atalhoItem} onPress={() => router.push('/grupos' as any)}>
             <View style={styles.atalhoIconWrap}><Ionicons name="people" size={20} color="#3A80F9" /></View>
             <Text style={styles.atalhoTxt}>Grupos</Text>
-          </View>
+          </TouchableOpacity>
         </View>
+
+  {/* <Image source={require("../assets/images/bot.jpg")} style={styles.image} /> */}
       </ScrollView>
     </View>
   );
@@ -149,4 +150,5 @@ const styles = StyleSheet.create({
   atalhoItem: { alignItems: 'center', flex: 1 },
   atalhoIconWrap: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#eaf4ff', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   atalhoTxt: { color: '#334155', fontSize: 12 },
+  image: { width: '100%', height: 200, borderRadius: 14, marginTop: 20 }
 });
