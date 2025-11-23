@@ -1,15 +1,16 @@
+import { fetchConteudo } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { ImageStyle, TextStyle, ViewStyle } from "react-native"; // Adicionando tipos para clareza
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 // --- CORES KHORA ---
@@ -78,39 +79,24 @@ const ContentCard: React.FC<ContentItemProps> = ({
 
 export default function Conteudo() {
   const router = useRouter();
-  const [activeTag, setActiveTag] = useState("Saúde Sexual");
+  const [activeTag, setActiveTag] = useState("Todos");
+  const [contentData, setContentData] = useState<ContentItemProps[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Dados mockados
-  const contentData: ContentItemProps[] = [
-    {
-      type: "ARTIGO",
-      title: "A verdade sobre a saúde da próstata",
-      description:
-        "Descubra os fatos essenciais sobre a saúde da próstata e como mantê-la em ótima forma.",
-      imageUrl: "https://placehold.co/80x80/d6e0e7/d6e0e7?text=",
-    },
-    {
-      type: "VÍDEO",
-      title: "Mitos e verdades sobre a saúde sexual",
-      description:
-        "Um vídeo curto e informativo para desmistificar crenças comuns sobre saúde sexual.",
-      imageUrl: "https://placehold.co/80x80/d6e0e7/d6e0e7?text=",
-    },
-    {
-      type: "INFOGRÁFICO",
-      title: "Nutrição para o bem-estar masculino",
-      description:
-        "Um guia visual com dicas de nutrição para otimizar a saúde e o bem-estar dos homens.",
-      imageUrl: "https://placehold.co/80x80/d6e0e7/d6e0e7?text=",
-    },
-    {
-      type: "QUIZ",
-      title: "Mito ou Verdade? Saúde Masculina",
-      description:
-        "Teste seus conhecimentos sobre saúde masculina com este quiz interativo e divertido.",
-      imageUrl: "https://placehold.co/80x80/d6e0e7/d6e0e7?text=",
-    },
-  ];
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const data = await fetchConteudo();
+        // Filtrar apenas conteúdos relacionados à saúde masculina, se necessário
+        setContentData(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setContentData([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const tags = [
     "Todos",
@@ -177,9 +163,22 @@ export default function Conteudo() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       >
-        {contentData.map((item, index) => (
-          <ContentCard key={index} {...item} />
-        ))}
+        {loading ? (
+          <Text>Carregando...</Text>
+        ) : contentData.length === 0 ? (
+          <Text>Nenhum conteúdo encontrado.</Text>
+        ) : (
+          contentData
+            .filter(
+              (item) =>
+                activeTag === "Todos" ||
+                item.title?.toLowerCase().includes(activeTag.toLowerCase()) ||
+                item.description?.toLowerCase().includes(activeTag.toLowerCase())
+            )
+            .map((item, index) => (
+              <ContentCard key={index} {...item} />
+            ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );

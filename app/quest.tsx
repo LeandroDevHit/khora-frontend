@@ -1,17 +1,18 @@
+import { sendUserCheckup } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Image,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    Image,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 // CORREÇÃO: Importando ImageStyle
 import type { ImageStyle, TextStyle, ViewStyle } from "react-native";
@@ -55,15 +56,27 @@ export default function Quest() {
     setVicios({ ...vicios, [key]: !vicios[key] });
   };
 
-  const nextStep = () => {
-    // AQUI: O total de passos é 4 (índices 0, 1, 2, 3). O último índice é 3.
+  const [sending, setSending] = useState(false);
+  const nextStep = async () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      console.log({ idadeSelecionada, altura, peso, vicios });
-      // Quando terminar, navega para a Home (usar /tabs como workaround de teste)
-      // Se o app crashar aqui, mudar para '/tabs' evita carregar uma tela específica
-      router.push("/tabs" as any);
+      setSending(true);
+      try {
+        await sendUserCheckup({
+          idade: idadeSelecionada || "",
+          altura,
+          peso,
+          vicios,
+        });
+        // Sucesso: navega para a Home
+        router.push("/tabs" as any);
+      } catch (err) {
+        // Erro: pode exibir mensagem ou feedback
+        alert("Erro ao enviar dados do questionário. Tente novamente.");
+      } finally {
+        setSending(false);
+      }
     }
   };
 
@@ -262,11 +275,14 @@ export default function Quest() {
       <TouchableOpacity
         style={styles.nextButton}
         onPress={nextStep}
-        // Desabilitar se o passo 0 não tiver seleção
-        disabled={step === 0 && idadeSelecionada === null}
+        disabled={step === 0 && idadeSelecionada === null || sending}
       >
         <Text style={styles.nextText}>
-          {step < 3 ? "Próximo" : "Finalizar"}
+          {sending
+            ? "Enviando..."
+            : step < 3
+            ? "Próximo"
+            : "Finalizar"}
         </Text>
       </TouchableOpacity>
     </SafeAreaView>

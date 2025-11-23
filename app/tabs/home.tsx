@@ -3,13 +3,13 @@ import { useRouter } from "expo-router";
 import React from "react";
 import type { ImageStyle } from "react-native";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 // --- CORES KHORA ---
@@ -24,24 +24,21 @@ const KHORA_COLORS = {
 
 // --- Componentes Reutilizáveis ---
 
-// Componente para o Health Score
-const HealthScoreCard = () => {
-  const score = 75;
-  const progressWidth = `${score}%`;
+import { fetchDailyMood, fetchHealthScore } from "@/services/api";
+import { useEffect, useState } from "react";
 
+// Componente para o Health Score
+const HealthScoreCard = ({ score }: { score: number }) => {
+  const progressWidth = `${score}%`;
   return (
     <View style={scoreStyles.card}>
-      {/* Wrapper para posicionar Título e Score na mesma linha */}
       <View style={scoreStyles.header}>
         <Text style={scoreStyles.title}>Health Score Dinâmico</Text>
         <Text style={scoreStyles.scoreText}>{score}/100</Text>
       </View>
-
-      {/* Barra de Progresso Abaixo */}
       <View style={scoreStyles.progressBarBackground}>
         <View style={[scoreStyles.progressBarFill, { width: progressWidth }]} />
       </View>
-
       <Text style={scoreStyles.subtitle}>Atualizado com suas atividades</Text>
     </View>
   );
@@ -51,6 +48,23 @@ interface ResumoItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
+  color?: string;
+}
+
+// Função para definir ícone e cor conforme tipo de humor
+function getMoodIconAndColor(type: string): { icon: keyof typeof Ionicons.glyphMap; color: string } {
+  switch (type?.toLowerCase()) {
+    case "feliz":
+      return { icon: "happy-outline", color: "#4CAF50" };
+    case "triste":
+      return { icon: "sad-outline", color: "#2196F3" };
+    case "ansioso":
+      return { icon: "alert-circle-outline", color: "#FF9800" };
+    case "irritado":
+      return { icon: "thunderstorm-outline", color: "#F44336" };
+    default:
+      return { icon: "happy-outline", color: KHORA_COLORS.primary };
+  }
 }
 
 // Componente para um item do Resumo do Dia
@@ -58,10 +72,11 @@ const ResumoItem: React.FC<ResumoItemProps> = ({
   iconName,
   title,
   subtitle,
+  color = KHORA_COLORS.primary,
 }) => (
   <View style={resumoStyles.itemContainer}>
-    <View style={resumoStyles.iconWrapper}>
-      <Ionicons name={iconName} size={28} color={KHORA_COLORS.primary} />
+    <View style={[resumoStyles.iconWrapper, { backgroundColor: color + "22" }]}> {/* cor com transparência */}
+      <Ionicons name={iconName} size={28} color={color} />
     </View>
     <View style={resumoStyles.textWrapper}>
       <Text style={resumoStyles.title}>{title}</Text>
@@ -74,26 +89,62 @@ const ResumoItem: React.FC<ResumoItemProps> = ({
 
 export default function Home() {
   const router = useRouter();
+  const [healthScore, setHealthScore] = useState<number | null>(null);
+  const [moodList, setMoodList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Função para simular a navegação do perfil
   const navigateToProfile = () => router.push("/perfil");
 
-  // URL para a imagem placeholder do cabeçalho
-  const profileImageUrl = "https://placehold.co/40x40/4A90E2/ffffff?text=U";
-  // URL para a imagem placeholder da Pílula de Conhecimento
-  const knowledgeImageUrl =
-    "https://placehold.co/350x200/cccccc/333333?text=P%C3%ADlula+Conhecimento";
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const scoreData = await fetchHealthScore();
+        setHealthScore(scoreData?.score ?? 0);
+        const moodData = await fetchDailyMood();
+        setMoodList(Array.isArray(moodData) ? moodData : []);
+      } catch (err) {
+        setHealthScore(0);
+        setMoodList([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Mapeamento dos moods para o resumo, ajustando ícone/cor
+  const resumoItems = moodList.length > 0
+    ? moodList.slice(0, 2).map((mood, idx) => {
+        const { icon, color } = getMoodIconAndColor(mood.type);
+        return {
+          iconName: icon,
+          title: mood.type || "Humor",
+          subtitle: mood.description || "Check-in de humor completo",
+          color,
+        };
+      })
+    : [
+        {
+          iconName: "calendar-outline",
+          title: "Check-up Anual",
+          subtitle: "Próximo exame em 30 dias",
+          color: KHORA_COLORS.primary,
+        },
+        {
+          iconName: "happy-outline",
+          title: "Humor",
+          subtitle: "Check-in de humor completo",
+          color: KHORA_COLORS.primary,
+        },
+      ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* --- HEADER (FIXO AGORA) --- */}
       <View style={styles.headerContainer}>
-        {/* Foto e Título */}
         <TouchableOpacity
           style={styles.profileButton}
           onPress={navigateToProfile}
         >
-          {/* Imagem de Perfil (Placeholder) */}
           <Image
             style={styles.profileImage}
             source={require("../../assets/images/cara.jpg")}
@@ -102,41 +153,35 @@ export default function Home() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Khora</Text>
       </View>
-      {/* --- FIM DO HEADER FIXO --- */}
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* --- Health Score --- */}
         <Text style={styles.sectionTitle}>Seu Health Score</Text>
-        <HealthScoreCard />
+        {loading ? (
+          <Text>Carregando...</Text>
+        ) : (
+          <HealthScoreCard score={healthScore ?? 0} />
+        )}
 
-        {/* --- Resumo do Dia --- */}
         <Text style={styles.sectionTitle}>Resumo do Dia</Text>
         <View style={resumoStyles.container}>
-          <ResumoItem
-            iconName="calendar-outline"
-            title="Check-up Anual"
-            subtitle="Próximo exame em 30 dias"
-          />
-          <View style={resumoStyles.divider} />
-          <ResumoItem
-            iconName="happy-outline"
-            title="Humor"
-            subtitle="Check-in de humor completo"
-          />
+          {resumoItems.map((item, idx) => (
+            <React.Fragment key={idx}>
+              <ResumoItem
+                iconName={item.iconName as keyof typeof Ionicons.glyphMap}
+                title={item.title}
+                subtitle={item.subtitle}
+                color={item.color}
+              />
+              {idx < resumoItems.length - 1 && <View style={resumoStyles.divider} />}
+            </React.Fragment>
+          ))}
         </View>
 
-        {/* --- Pílula de Conhecimento --- */}
         <Text style={styles.sectionTitle}>Pílula de Conhecimento</Text>
         <TouchableOpacity style={knowledgeStyles.card} activeOpacity={0.8}>
           <Image
-            // Se você quiser usar uma imagem local, DESCOMENTE a linha abaixo
-            // e COMENTE a linha do 'uri' abaixo dela.
-            // source={require("../assets/images/tecnicas-sono.jpg")}
-
-            // Usamos { uri: knowledgeImageUrl } para que a pré-visualização funcione.
             source={require("../../assets/images/tecnicas-sono.jpg")}
             style={knowledgeStyles.image}
             alt="Placeholder de Artigo sobre Sono"
@@ -152,8 +197,6 @@ export default function Home() {
             </Text>
           </View>
         </TouchableOpacity>
-
-        {/* Espaçamento extra no final para a Tab Bar (que é separada) */}
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
