@@ -79,8 +79,8 @@ const ResumoItem: React.FC<ResumoItemProps> = ({
       <Ionicons name={iconName} size={28} color={color} />
     </View>
     <View style={resumoStyles.textWrapper}>
-      <Text style={resumoStyles.title}>{title}</Text>
-      <Text style={resumoStyles.subtitle}>{subtitle}</Text>
+      <Text style={resumoStyles.title}>{String(title)}</Text>
+      <Text style={resumoStyles.subtitle}>{String(subtitle)}</Text>
     </View>
   </View>
 );

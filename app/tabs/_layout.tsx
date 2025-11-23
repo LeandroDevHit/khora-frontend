@@ -51,6 +51,24 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: "Dashboard",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="stats-chart" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="comunidade"
+        options={{
+          title: "Comunidade",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" color={color} size={size} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

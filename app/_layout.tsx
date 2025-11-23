@@ -19,6 +19,8 @@ export default function RootLayout() {
           <Stack.Screen name="tabs" />
           <Stack.Screen name="perfil" />
           <Stack.Screen name="quest" />
+          <Stack.Screen name="dashboard" />
+          <Stack.Screen name="comunidade" />
         </Stack>
         <FloatingChatButton />
       </AlertProvider>
