@@ -1,44 +1,3 @@
-<<<<<<< HEAD
-import { fetchUserMetas } from "@/services/api";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-
-export default function Metas() {
-  const [metas, setMetas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const data = await fetchUserMetas();
-        setMetas(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setMetas([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Minhas Metas</Text>
-      {loading ? (
-        <Text>Carregando...</Text>
-      ) : metas.length === 0 ? (
-        <Text>Nenhuma meta encontrada.</Text>
-      ) : (
-        <ScrollView style={styles.scroll}>
-          {metas.map((meta, idx) => (
-            <View key={idx} style={styles.metaCard}>
-              <Text style={styles.metaTitle}>{meta.titulo || meta.title || "Meta"}</Text>
-              <Text style={styles.metaDesc}>{meta.descricao || meta.description || ""}</Text>
-            </View>
-          ))}
-        </ScrollView>
-      )}
-=======
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -49,12 +8,13 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
+// Removida importação de 'fetchUserMetas' que não é usada neste bloco
 import { LineChart } from "react-native-gifted-charts";
 import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-export default function MetasScreen() {
+export default function MetasScreen() { // Mantendo MetasScreen como nome
   const [pesoAtual, setPesoAtual] = useState<number>(75);
   const [metaPeso, setMetaPeso] = useState<number>(70);
 
@@ -64,7 +24,8 @@ export default function MetasScreen() {
     // load real data here if needed
   }, []);
 
-  const progressPercent = Math.min(100, (metaPeso / pesoAtual) * 100);
+  // Garantir que a porcentagem não exceda 100%
+  const progressPercent = Math.min(100, ((pesoAtual - metaPeso) / (80 - metaPeso)) * 100); // Lógica de progresso baseada em peso
 
   return (
     <View style={styles.screen}>
@@ -152,26 +113,11 @@ export default function MetasScreen() {
           </View>
         </View>
       </ScrollView>
->>>>>>> da73d31 (Adicionado tela de chatbot; Implmentação de tela de dashboard; Inicio de logica do service do dashboard; Responsividade; Implementação de botão flutuante do chat;)
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
-  container: { flex: 1, padding: 24, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 16 },
-  scroll: { flex: 1 },
-  metaCard: {
-    backgroundColor: "#F1F5F9",
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-  },
-  metaTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 4 },
-  metaDesc: { fontSize: 15, color: "#697B8C" },
-});
-=======
   screen: { flex: 1, backgroundColor: '#fff' },
   container: { padding: 20, paddingBottom: 80, backgroundColor: '#fff' },
   title: { fontSize: 28, fontWeight: '800', marginBottom: 6, color: '#0f172a' },
@@ -204,4 +150,3 @@ const styles = StyleSheet.create({
   atalhoIconWrap: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#eaf4ff', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   atalhoTxt: { color: '#334155', fontSize: 12 },
 });
->>>>>>> da73d31 (Adicionado tela de chatbot; Implmentação de tela de dashboard; Inicio de logica do service do dashboard; Responsividade; Implementação de botão flutuante do chat;)
