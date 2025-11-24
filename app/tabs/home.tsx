@@ -3,13 +3,13 @@ import { useRouter } from "expo-router";
 import React from "react";
 import type { ImageStyle } from "react-native";
 import {
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 // --- CORES KHORA ---
@@ -24,8 +24,8 @@ const KHORA_COLORS = {
 
 // --- Componentes Reutilizáveis ---
 
-import { fetchDailyMood } from "@/services/wellBeingService";
 import { fetchHealthScore } from "@/services/userService";
+import { fetchDailyMood } from "@/services/wellBeingService";
 import { useEffect, useState } from "react";
 
 // Componente para o Health Score
@@ -77,7 +77,7 @@ const ResumoItem: React.FC<ResumoItemProps> = ({
   color = KHORA_COLORS.primary,
 }) => (
   <View style={resumoStyles.itemContainer}>
-    <View style={[resumoStyles.iconWrapper, { backgroundColor: color + "22" }]}> {/* cor com transparência */}
+    <View style={[resumoStyles.iconWrapper, { backgroundColor: color + "22" }]}> 
       <Ionicons name={iconName} size={28} color={color} />
     </View>
     <View style={resumoStyles.textWrapper}>
@@ -94,6 +94,9 @@ export default function Home() {
   const [healthScore, setHealthScore] = useState<number | null>(null);
   const [moodList, setMoodList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState<string | null>(null);
+  const [news, setNews] = useState<any>(null);
 
   const navigateToProfile = () => router.push("/perfil");
 
@@ -101,7 +104,6 @@ export default function Home() {
     async function fetchData() {
       try {
         const scoreData = await fetchHealthScore();
-        // Se o retorno for um número direto, use ele. Se for objeto, pegue a propriedade score
         let score = 0;
         if (typeof scoreData === "number") {
           score = scoreData;
@@ -119,6 +121,25 @@ export default function Home() {
       }
     }
     fetchData();
+    // Fetch GNews
+    async function fetchNews() {
+      try {
+        setNewsLoading(true);
+        setNewsError(null);
+        const res = await fetch("https://gnews.io/api/v4/search?q=saúde%20masculina&lang=pt&max=10&token=dcf10bde187ec1bda0c4b4e62c708bc3");
+        const data = await res.json();
+        if (data.articles && data.articles.length > 0) {
+          setNews(data.articles[0]);
+        } else {
+          setNewsError("Nenhuma notícia encontrada.");
+        }
+      } catch (err) {
+        setNewsError("Erro ao buscar notícia.");
+      } finally {
+        setNewsLoading(false);
+      }
+    }
+    fetchNews();
   }, []);
 
   // Mapeamento dos moods para o resumo, ajustando ícone/cor
@@ -189,24 +210,37 @@ export default function Home() {
         </View>
 
         <Text style={styles.sectionTitle}>Pílula de Conhecimento</Text>
-        <TouchableOpacity style={knowledgeStyles.card} activeOpacity={0.8}>
-          <Image
-            source={require("../../assets/images/tecnicas-sono.jpg")}
-            style={knowledgeStyles.image}
-            resizeMode="cover"
-            alt="Placeholder de Artigo sobre Sono"
-          />
-          <View style={knowledgeStyles.textContainer}>
-            <Text style={knowledgeStyles.articleTag}>Artigo</Text>
-            <Text style={knowledgeStyles.title}>
-              A importância do sono para a saúde mental
-            </Text>
-            <Text style={knowledgeStyles.description}>
-              Descubra como o sono afeta seu bem-estar e dicas para melhorar seu
-              descanso.
-            </Text>
-          </View>
-        </TouchableOpacity>
+        {newsLoading ? (
+          <Text style={{ marginVertical: 10 }}>Carregando notícia...</Text>
+        ) : newsError ? (
+          <Text style={{ color: 'red', marginVertical: 10 }}>{newsError}</Text>
+        ) : news ? (
+          <TouchableOpacity
+            style={knowledgeStyles.card}
+            activeOpacity={0.8}
+            onPress={() => {
+              if (news.url) {
+                // Abrir link externo
+              }
+            }}
+          >
+            {news.image ? (
+              <Image
+                source={{ uri: news.image }}
+                style={knowledgeStyles.image}
+                resizeMode="cover"
+              />
+            ) : null}
+            <View style={knowledgeStyles.textContainer}>
+              <Text style={knowledgeStyles.articleTag}>Artigo</Text>
+              <Text style={knowledgeStyles.title}>{news.title}</Text>
+              <Text style={knowledgeStyles.description}>{news.description}</Text>
+              <Text style={{ color: '#3b82f6', marginTop: 6 }}>
+                {news.source?.name} {!!news.publishedAt && `• ${new Date(news.publishedAt).toLocaleDateString()}`}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : null}
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
