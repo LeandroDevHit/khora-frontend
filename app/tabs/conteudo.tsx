@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { Entypo } from '@expo/vector-icons';
 
 // --- CORES KHORA ---
 const KHORA_COLORS = {
@@ -69,6 +70,7 @@ const ContentCard: React.FC<ContentItemProps> = ({
       <Image
         style={contentStyles.image}
         source={{ uri: imageUrl }}
+        resizeMode="cover"
         alt={`Imagem para ${title}`}
       />
     </View>
@@ -158,6 +160,24 @@ export default function Conteudo() {
         ))}
       </ScrollView>
 
+      {/* --- BOTÃO: Espaços de discussão --- */}
+      <TouchableOpacity
+        style={styles.discussionButton}
+        activeOpacity={0.8}
+        onPress={() => router.push("/comunidade")}
+      >
+        <View style={styles.discussionIconWrapper}>
+          <Entypo name="chat" size={20} color={KHORA_COLORS.primary} />
+        </View>
+        <Text style={styles.discussionText}>Espaços de discussão</Text>
+        <Ionicons
+          name="chevron-forward"
+          size={20}
+          color={KHORA_COLORS.primary}
+          style={{ marginLeft: 'auto' }}
+        />
+      </TouchableOpacity>
+
       {/* --- LISTA DE CONTEÚDO (Vertical Scroll) --- */}
       <ScrollView
         contentContainerStyle={styles.listContent}
@@ -239,8 +259,42 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 25,
     paddingTop: 10,
-    paddingBottom: 90,
+    paddingBottom: 140,
   } as ViewStyle,
+  // Botão de Espaços de discussão
+  discussionButton: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    backgroundColor: KHORA_COLORS.lightBlueBg,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: KHORA_COLORS.divider,
+    zIndex: 50,
+  } as ViewStyle,
+  discussionIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(59,130,246,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  } as ViewStyle,
+  discussionText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: KHORA_COLORS.darkText,
+  } as TextStyle,
 });
 
 // --- ESTILOS DAS TAGS ---
@@ -321,6 +375,5 @@ const contentStyles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
   } as ImageStyle,
 });

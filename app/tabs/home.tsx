@@ -184,6 +184,7 @@ export default function Home() {
           <Image
             source={require("../../assets/images/tecnicas-sono.jpg")}
             style={knowledgeStyles.image}
+            resizeMode="cover"
             alt="Placeholder de Artigo sobre Sono"
           />
           <View style={knowledgeStyles.textContainer}>
@@ -374,7 +375,6 @@ const knowledgeStyles = StyleSheet.create({
   image: {
     width: "100%",
     height: 200,
-    resizeMode: "cover",
   } as ImageStyle,
   textContainer: {
     padding: 20,
