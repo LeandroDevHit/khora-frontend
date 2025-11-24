@@ -4,6 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { fetchCheckups, createCheckup } from "@/services/checkupService";
 
+// Funções para editar e apagar exames (implementar no service se necessário)
+import { updateCheckup, deleteCheckup } from "@/services/checkupService";
+
 
 export default function Exames() {
   const router = useRouter();
@@ -13,6 +16,7 @@ export default function Exames() {
   const [novoNome, setNovoNome] = useState("");
   const [novaData, setNovaData] = useState("");
   const [novoStatus, setNovoStatus] = useState("");
+  const [editandoId, setEditandoId] = useState<number|null>(null);
 
   async function carregarExames() {
     setLoading(true);
@@ -58,27 +62,70 @@ export default function Exames() {
       Alert.alert("Data inválida. Use o formato dd/mm/yyyy.");
       return;
     }
+    // Impedir datas futuras
+    const dataSelecionada = new Date(dataISO);
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+    if (dataSelecionada > hoje) {
+      Alert.alert("A data não pode ser posterior à data de hoje.");
+      return;
+    }
     try {
-      await createCheckup({ nome: novoNome, data_prevista: dataISO, status: novoStatus });
+      if (editandoId) {
+        await updateCheckup(editandoId.toString(), { nome: novoNome, data_prevista: dataISO, status: novoStatus });
+      } else {
+        await createCheckup({ nome: novoNome, data_prevista: dataISO, status: novoStatus });
+      }
       setModalVisible(false);
       setNovoNome("");
       setNovaData("");
       setNovoStatus("");
+      setEditandoId(null);
       await carregarExames();
     } catch (e) {
-      Alert.alert("Erro ao adicionar exame.");
+      Alert.alert(editandoId ? "Erro ao editar exame." : "Erro ao adicionar exame.");
     }
+  }
+
+  function handleEditarExame(exame: any) {
+    setNovoNome(exame.nome);
+    setNovaData(exame.data_prevista ? new Date(exame.data_prevista).toLocaleDateString('pt-BR') : "");
+    setNovoStatus(exame.status || "");
+    setEditandoId(exame.id);
+    setModalVisible(true);
+  }
+
+  async function handleApagarExame(id: number) {
+    Alert.alert(
+      "Apagar exame",
+      "Tem certeza que deseja apagar este exame?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Apagar", style: "destructive", onPress: async () => {
+          try {
+            await deleteCheckup(id.toString());
+            await carregarExames();
+          } catch (e) {
+            Alert.alert("Erro ao apagar exame.");
+          }
+        }}
+      ]
+    );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Meus Exames</Text>
+
+  <Text style={styles.title}>Meus Exames</Text>
 
       {/* Modal de novo exame */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => {
+        setModalVisible(false);
+        setEditandoId(null);
+      }}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Novo Exame</Text>
+            <Text style={styles.modalTitle}>{editandoId ? "Editar Exame" : "Novo Exame"}</Text>
             <TextInput
               style={styles.input}
               placeholder="Nome do exame"
@@ -101,9 +148,12 @@ export default function Exames() {
             />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
               <TouchableOpacity style={styles.modalButton} onPress={handleAddExame}>
-                <Text style={styles.modalButtonText}>Salvar</Text>
+                <Text style={styles.modalButtonText}>{editandoId ? "Salvar Alterações" : "Salvar"}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
+                setModalVisible(false);
+                setEditandoId(null);
+              }}>
                 <Text style={[styles.modalButtonText, { color: '#333' }]}>Cancelar</Text>
               </TouchableOpacity>
             </View>
@@ -112,7 +162,13 @@ export default function Exames() {
       </Modal>
 
       {/* Botão para adicionar novo exame */}
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity style={styles.addButton} onPress={() => {
+        setModalVisible(true);
+        setEditandoId(null);
+        setNovoNome("");
+        setNovaData("");
+        setNovoStatus("");
+      }}>
         <Ionicons name="add-circle-outline" size={22} color="#377DFF" />
         <Text style={styles.addButtonText}>Adicionar novo exame</Text>
       </TouchableOpacity>
@@ -134,6 +190,14 @@ export default function Exames() {
                 <Text style={styles.examName}>{item.nome}</Text>
                 <Text style={styles.examDate}>Data: {item.data_prevista ? new Date(item.data_prevista).toLocaleDateString() : ""}</Text>
                 <Text style={[styles.examStatus, statusColor(item.status)]}>{item.status || ""}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => handleEditarExame(item)} style={{ marginRight: 8 }}>
+                  <Ionicons name="create-outline" size={20} color="#2196F3" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleApagarExame(item.id)}>
+                  <Ionicons name="trash-outline" size={20} color="#FF5252" />
+                </TouchableOpacity>
               </View>
             </View>
           )}

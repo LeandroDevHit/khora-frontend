@@ -20,8 +20,13 @@ export default function Prevencao() {
     async function fetchData() {
       try {
         const res = await fetchCheckups();
-        // Se o backend retorna { success, data }, use res.data
-  setExames(Array.isArray((res as any)?.data) ? (res as any).data : []);
+        let examesArr = Array.isArray((res as any)?.data) ? (res as any).data : [];
+        // Ordena por data_prevista (mais próxima primeiro)
+        examesArr = examesArr
+          .filter((e: any) => !!e.data_prevista)
+          .sort((a: any, b: any) => new Date(a.data_prevista).getTime() - new Date(b.data_prevista).getTime());
+        // Pega só os 3 primeiros
+        setExames(examesArr.slice(0, 3));
       } catch (e) {
         setExames([]);
       } finally {
