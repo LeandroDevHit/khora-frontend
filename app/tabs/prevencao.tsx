@@ -1,4 +1,4 @@
-import { fetchPrevencao } from "@/services/api";
+import { fetchPrevencao } from "@/services/wellBeingService";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -31,8 +31,12 @@ export default function Prevencao() {
         <ScrollView style={styles.scroll}>
           {exercicios.map((ex, idx) => (
             <View key={idx} style={styles.card}>
-              <Text style={styles.cardTitle}>{ex.nome || ex.name || "Exercício"}</Text>
-              <Text style={styles.cardDesc}>{ex.descricao || ex.description || ""}</Text>
+              <Text style={styles.cardTitle}>
+                {ex.nome || ex.name || "Exercício"}
+              </Text>
+              <Text style={styles.cardDesc}>
+                {ex.descricao || ex.description || ""}
+              </Text>
             </View>
           ))}
         </ScrollView>

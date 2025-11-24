@@ -13,16 +13,19 @@ import CustomButton from "../../components/Button";
 import CustomInput from "../../components/CustomInput";
 import { Colors } from "../../constants/GlobalStyles";
 import { style as twoFactorStyle } from "../../styles/auth/TwoFactorAuthStyle";
+import { setAuthToken } from "@/services/api";
 
 interface TwoFactorAuth {
-  isFirstLogin: boolean
+  isFirstLogin: boolean;
   message: string;
   userId: string;
+  token: string;
+  user: { name: string; [key: string]: any };
 }
 
 export default function TwoFactorAuth() {
   const router = useRouter();
-  const { userEmail, userId } = useUserContext();
+  const { userEmail, userId, setUserName, setUserToken } = useUserContext();
   const maskedEmail = userEmail ? maskEmail(userEmail) : "email não disponível";
   const [code, setCode] = useState("");
   const [countdown, setCountdown] = useState(180);
@@ -73,7 +76,10 @@ export default function TwoFactorAuth() {
       }
 
       const response = await verifyTwoFactorCode(code, userId);
-      const { message, isFirstLogin } = response as TwoFactorAuth;
+      const { message, isFirstLogin, token, user } = response as TwoFactorAuth;
+
+      setUserName(user.name);
+      setAuthToken(token);
 
 
       showSuccess("Sucesso!", message);

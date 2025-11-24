@@ -3,8 +3,12 @@ import React, { createContext, ReactNode, useContext, useState } from "react";
 interface UserContextProps {
   userEmail: string | null;
   setUserEmail: (email: string | null) => void;
-  userId: string | null; // Adiciona o userId
-  setUserId: (id: string | null) => void; // Adiciona o setter para userId
+  userId: string | null;
+  setUserId: (id: string | null) => void;
+  userName: string | null;
+  setUserName: (name: string | null) => void;
+  userToken: string | null;
+  setUserToken: (token: string | null) => void;
 }
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);
@@ -15,11 +19,13 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null); // Adiciona o estado para userId
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userToken, setUserToken] = useState<string | null>(null);
 
   return (
     <UserContext.Provider
-      value={{ userEmail, setUserEmail, userId, setUserId }}
+      value={{ userEmail, setUserEmail, userId, setUserId, userName, setUserName, userToken, setUserToken }}
     >
       {children}
     </UserContext.Provider>

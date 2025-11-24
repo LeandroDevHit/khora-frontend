@@ -1,18 +1,18 @@
-import { sendUserCheckup } from "@/services/api";
+import { sendUserCheckup } from "@/services/checkupService";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Image,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 // CORREÇÃO: Importando ImageStyle
 import type { ImageStyle, TextStyle, ViewStyle } from "react-native";
@@ -275,14 +275,10 @@ export default function Quest() {
       <TouchableOpacity
         style={styles.nextButton}
         onPress={nextStep}
-        disabled={step === 0 && idadeSelecionada === null || sending}
+        disabled={(step === 0 && idadeSelecionada === null) || sending}
       >
         <Text style={styles.nextText}>
-          {sending
-            ? "Enviando..."
-            : step < 3
-            ? "Próximo"
-            : "Finalizar"}
+          {sending ? "Enviando..." : step < 3 ? "Próximo" : "Finalizar"}
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
