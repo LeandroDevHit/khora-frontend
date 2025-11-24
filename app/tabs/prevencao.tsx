@@ -1,18 +1,35 @@
 
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Switch } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-
+import { useRouter } from "expo-router";
+import { fetchCheckups } from "@/services/checkupService";
 
 export default function Prevencao() {
-  // Mock dos exames
-  const exames = [
-    { id: 1, nome: "Check-up Anual", ano: 2025, icon: "calendar-outline" },
-    { id: 2, nome: "Check-up Anual", ano: 2025, icon: "ellipse" },
-    { id: 3, nome: "Check-up Anual", ano: 2025, icon: "calendar-outline" },
-  ];
+
+
+
+  const router = useRouter();
+  const [exames, setExames] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [notificacao1, setNotificacao1] = useState(true);
   const [notificacao2, setNotificacao2] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetchCheckups();
+        // Se o backend retorna { success, data }, use res.data
+  setExames(Array.isArray((res as any)?.data) ? (res as any).data : []);
+      } catch (e) {
+        setExames([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -24,41 +41,47 @@ export default function Prevencao() {
 
   {/* Timeline de exames */}
       <View style={styles.timelineContainer}>
-        {exames.map((exame, idx) => (
-          <View key={exame.id} style={styles.timelineItem}>
-            {/* Linha vertical */}
-            {idx < exames.length - 1 && (
-              <View style={[styles.timelineLine, { top: 32, left: 19 }]} />
-            )}
-            {/* Ícone */}
-            <View style={styles.timelineIconWrapper}>
-              <View style={[
-                styles.timelineIconBg,
-                idx === 0
-                  ? styles.timelineIconBgActive
-                  : styles.timelineIconBgInactive,
-              ]}>
-                <Ionicons
-                  name={exame.icon as any}
-                  size={24}
-                  color={idx === 0 ? '#fff' : '#377DFF'}
-                />
+        {loading ? (
+          <Text>Carregando exames...</Text>
+        ) : exames.length === 0 ? (
+          <Text>Nenhum exame encontrado.</Text>
+        ) : (
+          exames.map((exame, idx) => (
+            <View key={exame.id} style={styles.timelineItem}>
+              {/* Linha vertical */}
+              {idx < exames.length - 1 && (
+                <View style={[styles.timelineLine, { top: 32, left: 19 }]} />
+              )}
+              {/* Ícone */}
+              <View style={styles.timelineIconWrapper}>
+                <View style={[
+                  styles.timelineIconBg,
+                  idx === 0
+                    ? styles.timelineIconBgActive
+                    : styles.timelineIconBgInactive,
+                ]}>
+                  <Ionicons
+                    name={exame.icon ? exame.icon : "calendar-outline"}
+                    size={24}
+                    color={idx === 0 ? '#fff' : '#377DFF'}
+                  />
+                </View>
+              </View>
+              {/* Texto */}
+              <View style={styles.timelineTextWrapper}>
+                <Text style={styles.timelineTitle}>{exame.nome}</Text>
+                <Text style={styles.timelineYear}>{exame.data_prevista ? new Date(exame.data_prevista).getFullYear() : ""}</Text>
               </View>
             </View>
-            {/* Texto */}
-            <View style={styles.timelineTextWrapper}>
-              <Text style={styles.timelineTitle}>{exame.nome}</Text>
-              <Text style={styles.timelineYear}>{exame.ano}</Text>
-            </View>
-          </View>
-        ))}
+          ))
+        )}
       </View>
 
       {/* Espaço após timeline */}
       <View style={{ height: 18 }} />
 
       {/* Botão */}
-      <TouchableOpacity style={styles.button}>
+  <TouchableOpacity style={styles.button} onPress={() => router.push("/exames") }>
         <Text style={styles.buttonText}>Ver Meus Exames</Text>
       </TouchableOpacity>
 
