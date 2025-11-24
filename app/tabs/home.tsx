@@ -24,20 +24,22 @@ const KHORA_COLORS = {
 
 // --- Componentes Reutilizáveis ---
 
-import { fetchDailyMood, fetchHealthScore } from "@/services/api";
+import { fetchDailyMood } from "@/services/wellBeingService";
+import { fetchHealthScore } from "@/services/userService";
 import { useEffect, useState } from "react";
 
 // Componente para o Health Score
 const HealthScoreCard = ({ score }: { score: number }) => {
-  const progressWidth = `${score}%`;
+  // Garante que o valor fique entre 0 e 100
+  const progress = Math.max(0, Math.min(score, 100));
   return (
     <View style={scoreStyles.card}>
       <View style={scoreStyles.header}>
         <Text style={scoreStyles.title}>Health Score Dinâmico</Text>
-        <Text style={scoreStyles.scoreText}>{score}/100</Text>
+        <Text style={scoreStyles.scoreText}>{progress}/100</Text>
       </View>
       <View style={scoreStyles.progressBarBackground}>
-        <View style={[scoreStyles.progressBarFill, { width: progressWidth }]} />
+        <View style={[scoreStyles.progressBarFill, { width: `${progress}%` }]} />
       </View>
       <Text style={scoreStyles.subtitle}>Atualizado com suas atividades</Text>
     </View>
@@ -99,7 +101,14 @@ export default function Home() {
     async function fetchData() {
       try {
         const scoreData = await fetchHealthScore();
-        setHealthScore(scoreData?.score ?? 0);
+        // Se o retorno for um número direto, use ele. Se for objeto, pegue a propriedade score
+        let score = 0;
+        if (typeof scoreData === "number") {
+          score = scoreData;
+        } else if (scoreData && typeof (scoreData as { score?: number }).score === "number") {
+          score = (scoreData as { score: number }).score;
+        }
+        setHealthScore(score);
         const moodData = await fetchDailyMood();
         setMoodList(Array.isArray(moodData) ? moodData : []);
       } catch (err) {
