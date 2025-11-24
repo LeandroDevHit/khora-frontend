@@ -1,35 +1,118 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { fetchCheckups } from "@/services/checkupService";
+import { fetchCheckups, createCheckup } from "@/services/checkupService";
 
 
 export default function Exames() {
   const router = useRouter();
   const [exames, setExames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [novoNome, setNovoNome] = useState("");
+  const [novaData, setNovaData] = useState("");
+  const [novoStatus, setNovoStatus] = useState("");
+
+  async function carregarExames() {
+    setLoading(true);
+    try {
+      const res: any = await fetchCheckups();
+      setExames(Array.isArray(res?.data) ? res.data : []);
+    } catch (e) {
+      setExames([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const res: any = await fetchCheckups();
-        setExames(Array.isArray(res?.data) ? res.data : []);
-      } catch (e) {
-        setExames([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
+    carregarExames();
   }, []);
+
+  // Função para formatar a data enquanto digita (dd/mm/yyyy)
+  function formatarDataInput(text: string) {
+    // Remove tudo que não for número
+    let cleaned = text.replace(/\D/g, "");
+    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
+    let formatted = cleaned;
+    if (cleaned.length > 4) {
+      formatted = `${cleaned.slice(0,2)}/${cleaned.slice(2,4)}/${cleaned.slice(4)}`;
+    } else if (cleaned.length > 2) {
+      formatted = `${cleaned.slice(0,2)}/${cleaned.slice(2)}`;
+    }
+    return formatted;
+  }
+
+  async function handleAddExame() {
+    if (!novoNome || !novaData) {
+      Alert.alert("Preencha o nome e a data do exame.");
+      return;
+    }
+    // Converter para yyyy-mm-dd antes de enviar
+    const partes = novaData.split("/");
+    let dataISO = "";
+    if (partes.length === 3) {
+      dataISO = `${partes[2]}-${partes[1].padStart(2, "0")}-${partes[0].padStart(2, "0")}`;
+    } else {
+      Alert.alert("Data inválida. Use o formato dd/mm/yyyy.");
+      return;
+    }
+    try {
+      await createCheckup({ nome: novoNome, data_prevista: dataISO, status: novoStatus });
+      setModalVisible(false);
+      setNovoNome("");
+      setNovaData("");
+      setNovoStatus("");
+      await carregarExames();
+    } catch (e) {
+      Alert.alert("Erro ao adicionar exame.");
+    }
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Meus Exames</Text>
 
+      {/* Modal de novo exame */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Novo Exame</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nome do exame"
+              value={novoNome}
+              onChangeText={setNovoNome}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Data prevista (dd/mm/yyyy)"
+              value={novaData}
+              keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'numeric'}
+              maxLength={10}
+              onChangeText={text => setNovaData(formatarDataInput(text))}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Status (opcional)"
+              value={novoStatus}
+              onChangeText={setNovoStatus}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+              <TouchableOpacity style={styles.modalButton} onPress={handleAddExame}>
+                <Text style={styles.modalButtonText}>Salvar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => setModalVisible(false)}>
+                <Text style={[styles.modalButtonText, { color: '#333' }]}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Botão para adicionar novo exame */}
-      <TouchableOpacity style={styles.addButton} onPress={() => {/* lógica para adicionar exame */}}>
+      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
         <Ionicons name="add-circle-outline" size={22} color="#377DFF" />
         <Text style={styles.addButtonText}>Adicionar novo exame</Text>
       </TouchableOpacity>
@@ -59,7 +142,7 @@ export default function Exames() {
       )}
 
       {/* Botão para voltar para prevenção */}
-  <TouchableOpacity style={styles.backButton} onPress={() => router.push("/tabs/prevencao") }>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/tabs/prevencao") }>
         <Ionicons name="arrow-back" size={20} color="#377DFF" />
         <Text style={styles.backButtonText}>Voltar para Prevenção</Text>
       </TouchableOpacity>
@@ -81,6 +164,45 @@ function statusColor(status: string) {
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    width: 320,
+    elevation: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 15,
+  },
+  modalButton: {
+    backgroundColor: '#377DFF',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    marginHorizontal: 4,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
