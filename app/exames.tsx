@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert, Platform } from "react-native";
+// @ts-ignore: Sem types para o pacote no momento
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { fetchCheckups, createCheckup } from "@/services/checkupService";
@@ -15,6 +17,7 @@ export default function Exames() {
   const [modalVisible, setModalVisible] = useState(false);
   const [novoNome, setNovoNome] = useState("");
   const [novaData, setNovaData] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [novoStatus, setNovoStatus] = useState("");
   const [editandoId, setEditandoId] = useState<number|null>(null);
 
@@ -34,18 +37,12 @@ export default function Exames() {
     carregarExames();
   }, []);
 
-  // Função para formatar a data enquanto digita (dd/mm/yyyy)
-  function formatarDataInput(text: string) {
-    // Remove tudo que não for número
-    let cleaned = text.replace(/\D/g, "");
-    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
-    let formatted = cleaned;
-    if (cleaned.length > 4) {
-      formatted = `${cleaned.slice(0,2)}/${cleaned.slice(2,4)}/${cleaned.slice(4)}`;
-    } else if (cleaned.length > 2) {
-      formatted = `${cleaned.slice(0,2)}/${cleaned.slice(2)}`;
-    }
-    return formatted;
+  // Função para formatar a data para dd/mm/yyyy
+  function formatarDataParaBR(date: Date) {
+    const dia = String(date.getDate()).padStart(2, '0');
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const ano = date.getFullYear();
+    return `${dia}/${mes}/${ano}`;
   }
 
   async function handleAddExame() {
@@ -138,14 +135,32 @@ export default function Exames() {
               value={novoNome}
               onChangeText={setNovoNome}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Data prevista (dd/mm/yyyy)"
-              value={novaData}
-              keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'numeric'}
-              maxLength={10}
-              onChangeText={text => setNovaData(formatarDataInput(text))}
-            />
+            <TouchableOpacity
+              style={[styles.input, { justifyContent: 'center' }]}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={{ color: novaData ? '#222' : '#888', fontSize: 15 }}>
+                {novaData ? novaData : 'Data prevista (dd/mm/yyyy)'}
+              </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={novaData ? new Date(novaData.split('/').reverse().join('-')) : new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                minimumDate={new Date()}
+                onChange={(
+                  event: any,
+                  selectedDate?: Date | undefined
+                ) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
+                    setNovaData(formatarDataParaBR(selectedDate));
+                  }
+                }}
+              />
+            )}
             <TextInput
               style={styles.input}
               placeholder="Status (opcional)"
