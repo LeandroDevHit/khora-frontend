@@ -1,5 +1,6 @@
 import { fetchSaudeMental } from "@/services/wellBeingService";
 import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 import {
   ScrollView,
   StyleSheet,
@@ -27,6 +28,7 @@ interface Recurso {
 }
 
 export default function Saude() {
+  const router = useRouter();
   const [emocoes, setEmocoes] = useState<Emocao[]>([
     {
       id: "1",
@@ -174,7 +176,7 @@ export default function Saude() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.escanearButton}>
+          <TouchableOpacity style={styles.escanearButton} onPress={() => router.push("/analiseEmocional") }>
             <Text style={styles.escanearButtonText}>Escanear</Text>
           </TouchableOpacity>
         </View>
