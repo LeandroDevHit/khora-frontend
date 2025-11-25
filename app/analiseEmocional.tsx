@@ -152,23 +152,28 @@ export default function AnaliseEmocional() {
         </View>
 
         {showCamera && hasPermission ? (
-          <View style={styles.cameraContainer}>
-            <CameraView
-              ref={cameraRef}
-              style={styles.camera}
-              facing="front"
-              ratio="1:1"
-            />
-            <TouchableOpacity style={styles.analyzeButton} onPress={handleAnalyze} disabled={loading}>
+          <View style={styles.cameraWrapperModern}>
+            <View style={styles.cameraContainerModern}>
+              <CameraView
+                ref={cameraRef}
+                style={styles.cameraModern}
+                facing="front"
+                ratio="1:1"
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.captureButtonModern}
+              onPress={handleAnalyze}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
               {loading ? (
-                <ActivityIndicator color="#FFF" />
+                <ActivityIndicator color="#3B82F6" />
               ) : (
-                <>
-                  <Ionicons name="happy-outline" size={20} color="#FFF" style={{marginRight: 6}} />
-                  <Text style={styles.analyzeButtonText}>Analisar Emoção</Text>
-                </>
+                <Ionicons name="camera" size={36} color="#FFF" />
               )}
             </TouchableOpacity>
+            <Text style={styles.captureLabelModern}>Capturar e Analisar Emoção</Text>
           </View>
         ) : (
           <TouchableOpacity style={styles.openCameraButton} onPress={requestPermission}>
@@ -234,19 +239,52 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
   },
-  cameraContainer: {
-    width: 260,
-    height: 260,
-    borderRadius: 20,
-    overflow: "hidden",
-    backgroundColor: "#E5E7EB",
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 28,
+  // Novo design da câmera
+  cameraWrapperModern: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 32,
   },
-  camera: {
-    width: 260,
-    height: 260,
+  cameraContainerModern: {
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    overflow: 'hidden',
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+    borderWidth: 3,
+    borderColor: '#3B82F6',
+  },
+  cameraModern: {
+    width: 280,
+    height: 280,
+  },
+  captureButtonModern: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  captureLabelModern: {
+    marginTop: 12,
+    fontSize: 15,
+    color: '#3B82F6',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   openCameraButton: {
     flexDirection: "row",
