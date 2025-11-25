@@ -69,25 +69,32 @@ function getMoodIconAndColor(type: string): { icon: keyof typeof Ionicons.glyphM
   }
 }
 
-// Componente para um item do Resumo do Dia
-const ResumoItem: React.FC<ResumoItemProps> = ({
+// Componente para um item do Resumo do Dia (agora pode ser clicável)
+const ResumoItem: React.FC<ResumoItemProps & { onPress?: () => void }> = ({
   iconName,
   title,
   subtitle,
   color = KHORA_COLORS.primary,
-}) => (
-  <View style={resumoStyles.itemContainer}>
-    <View style={[resumoStyles.iconWrapper, { backgroundColor: color + "22" }]}> 
-      <Ionicons name={iconName} size={28} color={color} />
-    </View>
-    <View style={resumoStyles.textWrapper}>
-      <Text style={resumoStyles.title}>{String(title)}</Text>
-      <Text style={resumoStyles.subtitle}>{String(subtitle)}</Text>
-    </View>
-  </View>
-);
+  onPress,
+}) => {
+  const Wrapper = onPress ? TouchableOpacity : View;
+  return (
+    <Wrapper style={resumoStyles.itemContainer} onPress={onPress} activeOpacity={0.7}>
+      <View style={[resumoStyles.iconWrapper, { backgroundColor: color + "22" }]}> 
+        <Ionicons name={iconName} size={28} color={color} />
+      </View>
+      <View style={resumoStyles.textWrapper}>
+        <Text style={resumoStyles.title}>{String(title)}</Text>
+        <Text style={resumoStyles.subtitle}>{String(subtitle)}</Text>
+      </View>
+    </Wrapper>
+  );
+};
 
 // --- TELA HOME PRINCIPAL ---
+
+
+import { fetchCheckups } from "@/services/checkupService";
 
 export default function Home() {
   const router = useRouter();
@@ -97,6 +104,7 @@ export default function Home() {
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState<string | null>(null);
   const [news, setNews] = useState<any>(null);
+  const [exameMaisProximo, setExameMaisProximo] = useState<any | null>(null);
 
   const navigateToProfile = () => router.push("/perfil");
 
@@ -113,9 +121,19 @@ export default function Home() {
         setHealthScore(score);
         const moodData = await fetchDailyMood();
         setMoodList(Array.isArray(moodData) ? moodData : []);
+
+        // Buscar exames e pegar o mais próximo
+        const examesRes = await fetchCheckups();
+        let examesArr = Array.isArray((examesRes as any)?.data) ? (examesRes as any).data : [];
+        examesArr = examesArr.filter((e: any) => !!e.data_prevista);
+        examesArr.sort((a: any, b: any) => new Date(a.data_prevista).getTime() - new Date(b.data_prevista).getTime());
+        const hoje = new Date();
+        const exameProx = examesArr.find((e: any) => new Date(e.data_prevista) >= hoje) || examesArr[0] || null;
+        setExameMaisProximo(exameProx);
       } catch (err) {
         setHealthScore(0);
         setMoodList([]);
+        setExameMaisProximo(null);
       } finally {
         setLoading(false);
       }
@@ -143,30 +161,48 @@ export default function Home() {
   }, []);
 
   // Mapeamento dos moods para o resumo, ajustando ícone/cor
-  const resumoItems = moodList.length > 0
-    ? moodList.slice(0, 2).map((mood, idx) => {
-        const { icon, color } = getMoodIconAndColor(mood.type);
-        return {
-          iconName: icon,
-          title: mood.type || "Humor",
-          subtitle: mood.description || "Check-in de humor completo",
-          color,
-        };
-      })
-    : [
-        {
-          iconName: "calendar-outline",
-          title: "Check-up Anual",
-          subtitle: "Próximo exame em 30 dias",
-          color: KHORA_COLORS.primary,
-        },
-        {
-          iconName: "happy-outline",
-          title: "Humor",
-          subtitle: "Check-in de humor completo",
-          color: KHORA_COLORS.primary,
-        },
-      ];
+  // Lógica para o card de humor: se já fez hoje, mostra o humor, senão pede para fazer
+  let humorCard;
+  const hoje = new Date();
+  const hojeStr = hoje.toISOString().split('T')[0];
+  const moodHoje = moodList.find((m) => {
+    if (!m.createdAt && !m.data) return false;
+    // createdAt pode ser string ou Date
+    const data = m.createdAt || m.data;
+    const dataStr = (typeof data === 'string' ? data : data.toISOString()).split('T')[0];
+    return dataStr === hojeStr;
+  });
+  if (moodHoje) {
+    const { icon, color } = getMoodIconAndColor(moodHoje.type);
+    humorCard = {
+      iconName: icon,
+      title: moodHoje.type || "Humor",
+      subtitle: moodHoje.description || "Check-in de humor completo",
+      color,
+      onPress: undefined, // não é clicável se já fez
+    };
+  } else {
+    humorCard = {
+      iconName: "happy-outline",
+      title: "Humor",
+      subtitle: "Faça seu check-in de humor",
+      color: KHORA_COLORS.primary,
+      onPress: () => router.push("/analiseEmocional"),
+    };
+  }
+
+  const resumoItems = [
+    {
+      iconName: "calendar-outline",
+      title: "Check-up Anual",
+      subtitle: exameMaisProximo && exameMaisProximo.data_prevista
+        ? `Próximo exame: ${new Date(exameMaisProximo.data_prevista).toLocaleDateString('pt-BR')}`
+        : "Nenhum exame encontrado",
+      color: KHORA_COLORS.primary,
+      // sem onPress, apenas visual
+    },
+    humorCard,
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -203,6 +239,7 @@ export default function Home() {
                 title={item.title}
                 subtitle={item.subtitle}
                 color={item.color}
+                onPress={item.onPress}
               />
               {idx < resumoItems.length - 1 && <View style={resumoStyles.divider} />}
             </React.Fragment>
