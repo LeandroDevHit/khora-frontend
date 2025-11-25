@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert, Platform } from "react-native";
-// @ts-ignore: Sem types para o pacote no momento
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert } from "react-native";
+import DateInput from "../components/DateInput";
+// Não importar DateTimePicker no topo para evitar erro no web
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { fetchCheckups, createCheckup } from "@/services/checkupService";
@@ -11,13 +11,13 @@ import { updateCheckup, deleteCheckup } from "@/services/checkupService";
 
 
 export default function Exames() {
+  let DateTimePicker: any = null;
   const router = useRouter();
   const [exames, setExames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [novoNome, setNovoNome] = useState("");
   const [novaData, setNovaData] = useState("");
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [novoStatus, setNovoStatus] = useState("");
   const [editandoId, setEditandoId] = useState<number|null>(null);
 
@@ -37,7 +37,7 @@ export default function Exames() {
     carregarExames();
   }, []);
 
-  // Função para formatar a data para dd/mm/yyyy
+  // Função para formatar a data para dd/mm/yyyy (mantida para uso interno, se necessário)
   function formatarDataParaBR(date: Date) {
     const dia = String(date.getDate()).padStart(2, '0');
     const mes = String(date.getMonth() + 1).padStart(2, '0');
@@ -135,32 +135,7 @@ export default function Exames() {
               value={novoNome}
               onChangeText={setNovoNome}
             />
-            <TouchableOpacity
-              style={[styles.input, { justifyContent: 'center' }]}
-              onPress={() => setShowDatePicker(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={{ color: novaData ? '#222' : '#888', fontSize: 15 }}>
-                {novaData ? novaData : 'Data prevista (dd/mm/yyyy)'}
-              </Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={novaData ? new Date(novaData.split('/').reverse().join('-')) : new Date()}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                minimumDate={new Date()}
-                onChange={(
-                  event: any,
-                  selectedDate?: Date | undefined
-                ) => {
-                  setShowDatePicker(false);
-                  if (selectedDate) {
-                    setNovaData(formatarDataParaBR(selectedDate));
-                  }
-                }}
-              />
-            )}
+            <DateInput value={novaData} onChange={setNovaData} />
             <TextInput
               style={styles.input}
               placeholder="Status (opcional)"
