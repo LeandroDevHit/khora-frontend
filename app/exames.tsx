@@ -62,16 +62,17 @@ export default function Exames() {
       Alert.alert("Data inválida. Use o formato dd/mm/yyyy.");
       return;
     }
-    // Impedir datas futuras
+    // Impedir datas passadas (só permite hoje ou futuro)
     const dataSelecionada = new Date(dataISO);
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
-    if (dataSelecionada > hoje) {
-      Alert.alert("A data não pode ser posterior à data de hoje.");
+    dataSelecionada.setHours(0,0,0,0);
+    if (dataSelecionada < hoje) {
+      Alert.alert("A data não pode ser anterior à data de hoje.");
       return;
     }
     try {
-      if (editandoId) {
+      if (editandoId !== null) {
         await updateCheckup(editandoId.toString(), { nome: novoNome, data_prevista: dataISO, status: novoStatus });
       } else {
         await createCheckup({ nome: novoNome, data_prevista: dataISO, status: novoStatus });
@@ -83,7 +84,7 @@ export default function Exames() {
       setEditandoId(null);
       await carregarExames();
     } catch (e) {
-      Alert.alert(editandoId ? "Erro ao editar exame." : "Erro ao adicionar exame.");
+      Alert.alert(editandoId !== null ? "Erro ao editar exame." : "Erro ao adicionar exame.");
     }
   }
 
@@ -116,7 +117,12 @@ export default function Exames() {
   return (
     <View style={styles.container}>
 
-  <Text style={styles.title}>Meus Exames</Text>
+      {/* Botão de voltar para prevenção (apenas ícone, no topo) */}
+      <TouchableOpacity style={styles.backIconButton} onPress={() => router.push("/tabs/prevencao") }>
+        <Ionicons name="arrow-back" size={26} color="#377DFF" />
+      </TouchableOpacity>
+
+      <Text style={styles.title}>Meus Exames</Text>
 
       {/* Modal de novo exame */}
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => {
@@ -205,11 +211,7 @@ export default function Exames() {
         />
       )}
 
-      {/* Botão para voltar para prevenção */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push("/tabs/prevencao") }>
-        <Ionicons name="arrow-back" size={20} color="#377DFF" />
-        <Text style={styles.backButtonText}>Voltar para Prevenção</Text>
-      </TouchableOpacity>
+      {/* Botão de voltar removido daqui, agora está no topo */}
     </View>
   );
 }
@@ -294,21 +296,15 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: 18,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 10,
+  backIconButton: {
+    position: 'absolute',
+    top: 18,
+    left: 18,
+    zIndex: 10,
     backgroundColor: '#F6F8FA',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: '#377DFF',
-    fontWeight: 'bold',
-    fontSize: 15,
-    marginLeft: 6,
+    borderRadius: 20,
+    padding: 6,
+    elevation: 2,
   },
   card: {
     flexDirection: "row",

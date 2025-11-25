@@ -44,18 +44,18 @@ export default function Prevencao() {
       {/* Header */}
       <Text style={styles.title}>Prevenção</Text>
 
-      {/* Espaço após o título */}
-      <View style={{ height: 10 }} />
+      {/* Espaço maior antes do calendário para centralizar */}
+      <View style={{ height: 40 }} />
 
-      {/* Calendário de consultas */}
-      <View style={{ marginBottom: 18 }}>
+      {/* Calendário de consultas centralizado */}
+      <View style={{ marginBottom: 18, alignItems: 'center' }}>
         {loading ? (
           <Text>Carregando exames...</Text>
         ) : exames.length === 0 ? (
           <Text>Nenhum exame encontrado.</Text>
         ) : (
           <Calendar
-            style={{ borderRadius: 12, elevation: 2 }}
+            style={{ borderRadius: 12, elevation: 2, width: 340 }}
             theme={{
               selectedDayBackgroundColor: '#377DFF',
               todayTextColor: '#377DFF',
