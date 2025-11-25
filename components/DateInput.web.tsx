@@ -1,5 +1,4 @@
 import React from "react";
-import { TextInput, StyleSheet } from "react-native";
 
 interface DateInputProps {
   value: string;
@@ -8,24 +7,29 @@ interface DateInputProps {
 
 export default function DateInputWeb({ value, onChange }: DateInputProps) {
   return (
-    <TextInput
-      style={styles.input}
-      placeholder="Data prevista (dd/mm/yyyy)"
-      value={value}
-      onChangeText={onChange}
-      maxLength={10}
-      inputMode="numeric"
+    <input
+      type="date"
+      style={{
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 12,
+        fontSize: 15,
+        width: '100%',
+        height: 40,
+      }}
+      value={value ? value.split('/').reverse().join('-') : ''}
+      onChange={e => {
+        const val = e.target.value;
+        if (val) {
+          const [year, month, day] = val.split('-');
+          onChange(`${day}/${month}/${year}`);
+        } else {
+          onChange('');
+        }
+      }}
+      min={new Date().toISOString().split('T')[0]}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    fontSize: 15,
-  },
-});

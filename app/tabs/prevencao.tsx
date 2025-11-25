@@ -7,10 +7,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from "expo-router";
 import { fetchCheckups } from "@/services/checkupService";
 
+
 export default function Prevencao() {
-
-
-
   const router = useRouter();
   const [exames, setExames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,140 +36,141 @@ export default function Prevencao() {
     fetchData();
   }, []);
 
-
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <Text style={styles.title}>Prevenção</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        {/* Header */}
+        <Text style={styles.title}>Prevenção</Text>
 
-      {/* Espaço maior antes do calendário para centralizar */}
-      <View style={{ height: 40 }} />
+        {/* Espaço maior antes do conteúdo */}
+        <View style={{ height: 40 }} />
 
-      {/* Calendário de consultas centralizado */}
-      <View style={{ marginBottom: 18, alignItems: 'center' }}>
-        {loading ? (
-          <Text>Carregando exames...</Text>
-        ) : exames.length === 0 ? (
-          <Text>Nenhum exame encontrado.</Text>
-        ) : (
-          <Calendar
-            style={{ borderRadius: 12, elevation: 2, width: 340 }}
-            theme={{
-              selectedDayBackgroundColor: '#377DFF',
-              todayTextColor: '#377DFF',
-              arrowColor: '#377DFF',
-            }}
-            markedDates={exames.reduce((acc, exame) => {
-              if (exame.data_prevista) {
-                const dateStr = new Date(exame.data_prevista).toISOString().split('T')[0];
-                acc[dateStr] = {
-                  marked: true,
-                  dotColor: '#377DFF',
-                  activeOpacity: 0,
-                  customStyles: { container: { borderRadius: 16 } },
-                };
-              }
-              return acc;
-            }, {} as any)}
-            onDayPress={(day) => {
-              const exame = exames.find(e => new Date(e.data_prevista).toISOString().split('T')[0] === day.dateString);
-              if (exame) {
-                setSelectedExame(exame);
-                setModalVisible(true);
-              } else {
-                setSelectedExame(null);
-              }
-            }}
-          />
-        )}
-      </View>
+        {/* Botão */}
+        <TouchableOpacity style={styles.button} onPress={() => router.push("/exames") }>
+          <Text style={styles.buttonText}>Ver Meus Exames</Text>
+        </TouchableOpacity>
 
-      {/* Modal de detalhes da consulta */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Detalhes da Consulta</Text>
-            {selectedExame && (
-              <>
-                <Text style={styles.modalLabel}>Nome:</Text>
-                <Text style={styles.modalValue}>{selectedExame.nome}</Text>
-                <Text style={styles.modalLabel}>Data Prevista:</Text>
-                <Text style={styles.modalValue}>{selectedExame.data_prevista ? new Date(selectedExame.data_prevista).toLocaleDateString() : ''}</Text>
-                {selectedExame.local && <><Text style={styles.modalLabel}>Local:</Text><Text style={styles.modalValue}>{selectedExame.local}</Text></>}
-                {selectedExame.observacao && <><Text style={styles.modalLabel}>Observação:</Text><Text style={styles.modalValue}>{selectedExame.observacao}</Text></>}
-              </>
-            )}
-            <Pressable style={styles.modalButton} onPress={() => setModalVisible(false)}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Fechar</Text>
-            </Pressable>
+        {/* Espaço após botão */}
+        <View style={{ height: 18 }} />
+
+        {/* Card explicativo */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoCardLink}>Por que isso importa?</Text>
+          <Text style={styles.infoCardTitle}>Check-up Anual</Text>
+          <Text style={styles.infoCardDesc}>
+            O check-up anual é uma oportunidade para avaliar sua saúde geral e identificar possíveis problemas precocemente. Inclui exames de sangue, urina, avaliação cardíaca e consulta com um clínico geral.
+          </Text>
+        </View>
+
+        {/* Espaço após card explicativo */}
+        <View style={{ height: 18 }} />
+
+        {/* Calendário de consultas centralizado */}
+        <View style={{ marginBottom: 18, alignItems: 'center' }}>
+          {loading ? (
+            <Text>Carregando exames...</Text>
+          ) : exames.length === 0 ? (
+            <Text>Nenhum exame encontrado.</Text>
+          ) : (
+            <Calendar
+              style={{ borderRadius: 12, elevation: 2, width: 340 }}
+              theme={{
+                selectedDayBackgroundColor: '#377DFF',
+                todayTextColor: '#377DFF',
+                arrowColor: '#377DFF',
+              }}
+              markedDates={exames.reduce((acc, exame) => {
+                if (exame.data_prevista) {
+                  const dateStr = new Date(exame.data_prevista).toISOString().split('T')[0];
+                  acc[dateStr] = {
+                    marked: true,
+                    dotColor: '#377DFF',
+                    activeOpacity: 0,
+                    customStyles: { container: { borderRadius: 16 } },
+                  };
+                }
+                return acc;
+              }, {} as any)}
+              onDayPress={(day) => {
+                const exame = exames.find(e => new Date(e.data_prevista).toISOString().split('T')[0] === day.dateString);
+                if (exame) {
+                  setSelectedExame(exame);
+                  setModalVisible(true);
+                } else {
+                  setSelectedExame(null);
+                }
+              }}
+            />
+          )}
+        </View>
+
+        {/* Modal de detalhes da consulta */}
+        <Modal
+          visible={modalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Detalhes da Consulta</Text>
+              {selectedExame && (
+                <>
+                  <Text style={styles.modalLabel}>Nome:</Text>
+                  <Text style={styles.modalValue}>{selectedExame.nome}</Text>
+                  <Text style={styles.modalLabel}>Data Prevista:</Text>
+                  <Text style={styles.modalValue}>{selectedExame.data_prevista ? new Date(selectedExame.data_prevista).toLocaleDateString() : ''}</Text>
+                  {selectedExame.local && <><Text style={styles.modalLabel}>Local:</Text><Text style={styles.modalValue}>{selectedExame.local}</Text></>}
+                  {selectedExame.observacao && <><Text style={styles.modalLabel}>Observação:</Text><Text style={styles.modalValue}>{selectedExame.observacao}</Text></>}
+                </>
+              )}
+              <Pressable style={styles.modalButton} onPress={() => setModalVisible(false)}>
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Fechar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Espaço após calendário */}
+        <View style={{ height: 18 }} />
+
+        {/* Lembretes Inteligentes */}
+        <Text style={styles.sectionTitle}>Lembretes Inteligentes</Text>
+        <View>
+          {/* Card 1 */}
+          <View style={styles.reminderCardCustom}>
+            <View style={styles.reminderIconBox}>
+              <MaterialCommunityIcons name="bell-outline" size={24} color="#377DFF" />
+            </View>
+            <View style={styles.reminderTextBox}>
+              <Text style={styles.reminderTitleCustom}>Notificação</Text>
+              <Text style={styles.reminderDescCustom}>1 semana antes</Text>
+            </View>
+            <Switch
+              value={notificacao1}
+              onValueChange={setNotificacao1}
+              trackColor={{ false: '#ccc', true: '#377DFF' }}
+              thumbColor={notificacao1 ? '#fff' : '#f4f3f4'}
+            />
+          </View>
+          {/* Card 2 */}
+          <View style={styles.reminderCardCustom}>
+            <View style={styles.reminderIconBox}>
+              <MaterialCommunityIcons name="bell-outline" size={24} color="#377DFF" />
+            </View>
+            <View style={styles.reminderTextBox}>
+              <Text style={styles.reminderTitleCustom}>Notificação</Text>
+              <Text style={styles.reminderDescCustom}>1 dia antes</Text>
+            </View>
+            <Switch
+              value={notificacao2}
+              onValueChange={setNotificacao2}
+              trackColor={{ false: '#ccc', true: '#377DFF' }}
+              thumbColor={notificacao2 ? '#fff' : '#f4f3f4'}
+            />
           </View>
         </View>
-      </Modal>
-
-      {/* Espaço após calendário */}
-      <View style={{ height: 18 }} />
-
-      {/* Botão */}
-  <TouchableOpacity style={styles.button} onPress={() => router.push("/exames") }>
-        <Text style={styles.buttonText}>Ver Meus Exames</Text>
-      </TouchableOpacity>
-
-      {/* Espaço após botão */}
-      <View style={{ height: 18 }} />
-
-      {/* Card explicativo */}
-      <View style={styles.infoCard}>
-        <Text style={styles.infoCardLink}>Por que isso importa?</Text>
-        <Text style={styles.infoCardTitle}>Check-up Anual</Text>
-        <Text style={styles.infoCardDesc}>
-          O check-up anual é uma oportunidade para avaliar sua saúde geral e identificar possíveis problemas precocemente. Inclui exames de sangue, urina, avaliação cardíaca e consulta com um clínico geral.
-        </Text>
-      </View>
-
-  {/* Espaço após card explicativo */}
-  <View style={{ height: 18 }} />
-
-  {/* Lembretes Inteligentes */}
-  <Text style={styles.sectionTitle}>Lembretes Inteligentes</Text>
-      <View>
-        {/* Card 1 */}
-        <View style={styles.reminderCardCustom}>
-          <View style={styles.reminderIconBox}>
-            <MaterialCommunityIcons name="bell-outline" size={24} color="#377DFF" />
-          </View>
-          <View style={styles.reminderTextBox}>
-            <Text style={styles.reminderTitleCustom}>Notificação</Text>
-            <Text style={styles.reminderDescCustom}>1 semana antes</Text>
-          </View>
-          <Switch
-            value={notificacao1}
-            onValueChange={setNotificacao1}
-            trackColor={{ false: '#ccc', true: '#377DFF' }}
-            thumbColor={notificacao1 ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-        {/* Card 2 */}
-        <View style={styles.reminderCardCustom}>
-          <View style={styles.reminderIconBox}>
-            <MaterialCommunityIcons name="bell-outline" size={24} color="#377DFF" />
-          </View>
-          <View style={styles.reminderTextBox}>
-            <Text style={styles.reminderTitleCustom}>Notificação</Text>
-            <Text style={styles.reminderDescCustom}>1 dia antes</Text>
-          </View>
-          <Switch
-            value={notificacao2}
-            onValueChange={setNotificacao2}
-            trackColor={{ false: '#ccc', true: '#377DFF' }}
-            thumbColor={notificacao2 ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }

@@ -10,7 +10,6 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 
 interface Emocao {
   id: string;
@@ -28,7 +27,6 @@ interface Recurso {
 }
 
 export default function Saude() {
-  const router = useRouter();
   const [emocoes, setEmocoes] = useState<Emocao[]>([
     {
       id: "1",
@@ -176,66 +174,9 @@ export default function Saude() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.escanearButton}
-            onPress={() => router.push("/analiseEmocional")}
-          >
+          <TouchableOpacity style={styles.escanearButton}>
             <Text style={styles.escanearButtonText}>Escanear</Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Insights com Timeline Vertical */}
-        <View style={styles.timelineContainer}>
-          <View style={styles.timelineLabel}>
-            <Text style={styles.timelineLabelText}>Insights</Text>
-          </View>
-
-          <View style={styles.verticalTimeline}>
-            {/* Linha vertical */}
-            <View style={styles.timelineLine} />
-
-            {/* Item 1 */}
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineMarker} />
-              <TouchableOpacity style={styles.timelineCard}>
-                <View style={styles.timelineCardHeader}>
-                  <Ionicons name="trending-up" size={20} color="#3B82F6" />
-                  <Text style={styles.timelineCardTitle}>Seu Padrão</Text>
-                </View>
-                <Text style={styles.timelineCardDesc}>
-                  Você foi mais feliz nos últimos 7 dias
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Item 2 */}
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineMarker} />
-              <TouchableOpacity style={styles.timelineCard}>
-                <View style={styles.timelineCardHeader}>
-                  <Ionicons name="star" size={20} color="#F59E0B" />
-                  <Text style={styles.timelineCardTitle}>Melhor Dia</Text>
-                </View>
-                <Text style={styles.timelineCardDesc}>
-                  Seu melhor dia foi ontem
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Item 3 */}
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineMarker} />
-              <TouchableOpacity style={styles.timelineCard}>
-                <View style={styles.timelineCardHeader}>
-                  <Ionicons name="alert-circle" size={20} color="#10B981" />
-                  <Text style={styles.timelineCardTitle}>Dica</Text>
-                </View>
-                <Text style={styles.timelineCardDesc}>
-                  Medite 5 min para melhorar seu bem-estar
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
 
         {/* Recursos de Apoio */}
@@ -263,6 +204,27 @@ export default function Saude() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Insights */}
+        <TouchableOpacity style={styles.insightsCard}>
+          <View style={styles.insightsHeader}>
+            <View style={styles.insightsIconContainer}>
+              <Ionicons name="trending-up" size={24} color="#3B82F6" />
+            </View>
+            <View>
+              <Text style={styles.insightsTitle}>Insights</Text>
+              <Text style={styles.insightsDesc}>
+                Veja estatísticas e padrões emocionais
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color="#3B82F6"
+            style={styles.insightsArrow}
+          />
+        </TouchableOpacity>
 
         {/* Áudios e Meditações */}
         {audios.length > 0 && (
@@ -686,68 +648,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#FFF",
-  },
-  timelineContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
-  },
-  timelineLabel: {
-    marginBottom: 16,
-  },
-  timelineLabelText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-  },
-  verticalTimeline: {
-    position: "relative",
-    paddingLeft: 32,
-  },
-  timelineLine: {
-    position: "absolute",
-    left: 6,
-    top: 0,
-    bottom: 0,
-    width: 2,
-    backgroundColor: "#D1D5DB",
-  },
-  timelineItem: {
-    marginBottom: 24,
-    position: "relative",
-  },
-  timelineMarker: {
-    position: "absolute",
-    left: -32,
-    top: 8,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#3B82F6",
-    borderWidth: 3,
-    borderColor: "#FFF",
-  },
-  timelineCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  timelineCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  timelineCardTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginLeft: 8,
-  },
-  timelineCardDesc: {
-    fontSize: 13,
-    color: "#6B7280",
-    lineHeight: 18,
   },
 });
