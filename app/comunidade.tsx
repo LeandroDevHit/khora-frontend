@@ -1,4 +1,4 @@
-import { fetchForumTopics } from "@/services/api";
+import { fetchForumTopics } from "@/services/forumService";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, View, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
@@ -38,8 +38,8 @@ const exampleGroups = [
 
 export default function Comunidade() {
   const router = useRouter();
-  const [topics, setTopics] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const [topics, setTopics] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadTopics() {

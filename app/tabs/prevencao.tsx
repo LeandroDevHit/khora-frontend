@@ -1,7 +1,8 @@
 
 
 import { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Switch } from "react-native";
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Switch, Modal, Pressable } from "react-native";
+import { Calendar } from 'react-native-calendars';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from "expo-router";
 import { fetchCheckups } from "@/services/checkupService";
@@ -15,6 +16,8 @@ export default function Prevencao() {
   const [loading, setLoading] = useState(true);
   const [notificacao1, setNotificacao1] = useState(true);
   const [notificacao2, setNotificacao2] = useState(false);
+  const [selectedExame, setSelectedExame] = useState<any | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -25,8 +28,7 @@ export default function Prevencao() {
         examesArr = examesArr
           .filter((e: any) => !!e.data_prevista)
           .sort((a: any, b: any) => new Date(a.data_prevista).getTime() - new Date(b.data_prevista).getTime());
-        // Pega só os 3 primeiros
-        setExames(examesArr.slice(0, 3));
+        setExames(examesArr); // agora mostra todos para o calendário
       } catch (e) {
         setExames([]);
       } finally {
@@ -36,53 +38,82 @@ export default function Prevencao() {
     fetchData();
   }, []);
 
+
   return (
     <View style={styles.container}>
       {/* Header */}
-  <Text style={styles.title}>Prevenção</Text>
+      <Text style={styles.title}>Prevenção</Text>
 
-  {/* Espaço após o título */}
-  <View style={{ height: 10 }} />
+      {/* Espaço após o título */}
+      <View style={{ height: 10 }} />
 
-  {/* Timeline de exames */}
-      <View style={styles.timelineContainer}>
+      {/* Calendário de consultas */}
+      <View style={{ marginBottom: 18 }}>
         {loading ? (
           <Text>Carregando exames...</Text>
         ) : exames.length === 0 ? (
           <Text>Nenhum exame encontrado.</Text>
         ) : (
-          exames.map((exame, idx) => (
-            <View key={exame.id} style={styles.timelineItem}>
-              {/* Linha vertical */}
-              {idx < exames.length - 1 && (
-                <View style={[styles.timelineLine, { top: 32, left: 19 }]} />
-              )}
-              {/* Ícone */}
-              <View style={styles.timelineIconWrapper}>
-                <View style={[
-                  styles.timelineIconBg,
-                  idx === 0
-                    ? styles.timelineIconBgActive
-                    : styles.timelineIconBgInactive,
-                ]}>
-                  <Ionicons
-                    name={exame.icon ? exame.icon : "calendar-outline"}
-                    size={24}
-                    color={idx === 0 ? '#fff' : '#377DFF'}
-                  />
-                </View>
-              </View>
-              {/* Texto */}
-              <View style={styles.timelineTextWrapper}>
-                <Text style={styles.timelineTitle}>{exame.nome}</Text>
-                <Text style={styles.timelineYear}>{exame.data_prevista ? new Date(exame.data_prevista).getFullYear() : ""}</Text>
-              </View>
-            </View>
-          ))
+          <Calendar
+            style={{ borderRadius: 12, elevation: 2 }}
+            theme={{
+              selectedDayBackgroundColor: '#377DFF',
+              todayTextColor: '#377DFF',
+              arrowColor: '#377DFF',
+            }}
+            markedDates={exames.reduce((acc, exame) => {
+              if (exame.data_prevista) {
+                const dateStr = new Date(exame.data_prevista).toISOString().split('T')[0];
+                acc[dateStr] = {
+                  marked: true,
+                  dotColor: '#377DFF',
+                  activeOpacity: 0,
+                  customStyles: { container: { borderRadius: 16 } },
+                };
+              }
+              return acc;
+            }, {} as any)}
+            onDayPress={(day) => {
+              const exame = exames.find(e => new Date(e.data_prevista).toISOString().split('T')[0] === day.dateString);
+              if (exame) {
+                setSelectedExame(exame);
+                setModalVisible(true);
+              } else {
+                setSelectedExame(null);
+              }
+            }}
+          />
         )}
       </View>
 
-      {/* Espaço após timeline */}
+      {/* Modal de detalhes da consulta */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Detalhes da Consulta</Text>
+            {selectedExame && (
+              <>
+                <Text style={styles.modalLabel}>Nome:</Text>
+                <Text style={styles.modalValue}>{selectedExame.nome}</Text>
+                <Text style={styles.modalLabel}>Data Prevista:</Text>
+                <Text style={styles.modalValue}>{selectedExame.data_prevista ? new Date(selectedExame.data_prevista).toLocaleDateString() : ''}</Text>
+                {selectedExame.local && <><Text style={styles.modalLabel}>Local:</Text><Text style={styles.modalValue}>{selectedExame.local}</Text></>}
+                {selectedExame.observacao && <><Text style={styles.modalLabel}>Observação:</Text><Text style={styles.modalValue}>{selectedExame.observacao}</Text></>}
+              </>
+            )}
+            <Pressable style={styles.modalButton} onPress={() => setModalVisible(false)}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Fechar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Espaço após calendário */}
       <View style={{ height: 18 }} />
 
       {/* Botão */}
@@ -146,6 +177,44 @@ export default function Prevencao() {
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    elevation: 4,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginBottom: 12,
+    color: '#377DFF',
+    alignSelf: 'center',
+  },
+  modalLabel: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    marginTop: 8,
+    color: '#222',
+  },
+  modalValue: {
+    fontSize: 15,
+    color: '#697B8C',
+    marginBottom: 2,
+  },
+  modalButton: {
+    backgroundColor: '#377DFF',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 18,
+  },
   container: {
     flex: 1,
     padding: 24,
