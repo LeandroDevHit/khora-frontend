@@ -13,6 +13,45 @@ export default function AnaliseEmocional() {
   const [showCamera, setShowCamera] = useState(false);
   const cameraRef = useRef<any>(null);
 
+    // Mapeamento das emoções para português
+    const emotionMap: Record<string, string> = {
+      happiness: 'Felicidade',
+      sadness: 'Tristeza',
+      neutral: 'Neutro',
+      disgust: 'Nojo',
+      fear: 'Medo',
+      anger: 'Raiva',
+      surprise: 'Surpresa'
+    };
+
+    // Função para registrar humor manual (emoji)
+    const handleRegisterEmojiMood = async (emoji: string) => {
+      setLoading(true);
+      try {
+        await fetch('http://192.168.15.8:3000/api/mood', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            mood: emoji,
+            origin: 'manual',
+          }),
+        });
+        setEmotion(`Humor registrado: ${emoji}`);
+      } catch (err) {
+        let errorMsg = '';
+        if (err instanceof Error) {
+          errorMsg = err.message;
+        } else if (typeof err === 'object') {
+          errorMsg = JSON.stringify(err);
+        } else {
+          errorMsg = String(err);
+        }
+        setEmotion('Erro ao registrar humor manual: ' + errorMsg);
+      }
+      setLoading(false);
+    };
   const requestPermission = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
     setHasPermission(status === "granted");
@@ -69,16 +108,9 @@ export default function AnaliseEmocional() {
           const emotions = data.faces[0].attributes.emotion as Record<string, number>;
           const sorted = Object.entries(emotions).sort((a, b) => b[1] - a[1]);
           const [emotionName, emotionScore] = sorted[0];
-          const emotionMap: Record<string, string> = {
-            happiness: 'Felicidade',
-            sadness: 'Tristeza',
-            neutral: 'Neutro',
-            disgust: 'Nojo',
-            fear: 'Medo',
-            anger: 'Raiva',
-            surprise: 'Surpresa',
-          };
-          const emotionPt = emotionMap[emotionName.toLowerCase()] || emotionName;
+            const emotionPt = Object.prototype.hasOwnProperty.call(emotionMap, emotionName.toLowerCase())
+              ? emotionMap[emotionName.toLowerCase()]
+              : emotionName;
           setEmotion(`${emotionPt} (${emotionScore.toFixed(1)}%)`);
         } else {
           setEmotion('Não foi possível identificar emoção. Face++: ' + JSON.stringify(data, null, 2));
@@ -86,8 +118,8 @@ export default function AnaliseEmocional() {
       }
     } catch (err) {
       let errorMsg = '';
-      if (err instanceof Error) {
-        errorMsg = err.message + (err.stack ? '\n' + err.stack : '');
+      if (err && typeof err === 'object' && 'message' in err) {
+        errorMsg = (err as any).message + ((err as any).stack ? '\n' + (err as any).stack : '');
       } else if (typeof err === 'object') {
         errorMsg = JSON.stringify(err, null, 2);
       } else {
