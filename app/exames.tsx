@@ -113,6 +113,7 @@ export default function Exames() {
 
   return (
     <View style={styles.container}>
+
       {/* Botão de voltar para prevenção (apenas ícone, no topo) */}
       <TouchableOpacity style={styles.backIconButton} onPress={() => router.push("/tabs/prevencao") }>
         <Ionicons name="arrow-back" size={26} color="#377DFF" />
@@ -135,10 +136,6 @@ export default function Exames() {
               onChangeText={setNovoNome}
             />
             <DateInput value={novaData} onChange={setNovaData} />
-            {/* Botão Ver meu exame dentro do modal, logo abaixo do campo de data */}
-            <TouchableOpacity style={styles.bottomButtonModal} onPress={() => {/* ação do botão */}}>
-              <Text style={styles.bottomButtonText}>Ver meu exame</Text>
-            </TouchableOpacity>
             <TextInput
               style={styles.input}
               placeholder="Status (opcional)"
@@ -172,41 +169,39 @@ export default function Exames() {
         <Text style={styles.addButtonText}>Adicionar novo exame</Text>
       </TouchableOpacity>
 
-      <View style={{ flex: 1 }}>
-        {loading ? (
-          <Text>Carregando exames...</Text>
-        ) : exames.length === 0 ? (
-          <Text>Nenhum exame encontrado.</Text>
-        ) : (
-          <FlatList
-            data={exames}
-            keyExtractor={item => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <View style={styles.iconBox}>
-                  <Ionicons name={item.icon ? item.icon : "calendar-outline"} size={28} color="#377DFF" />
-                </View>
-                <View style={styles.infoBox}>
-                  <Text style={styles.examName}>{item.nome}</Text>
-                  <Text style={styles.examDate}>Data: {item.data_prevista ? new Date(item.data_prevista).toLocaleDateString() : ""}</Text>
-                  <Text style={[styles.examStatus, statusColor(item.status)]}>{item.status || ""}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <TouchableOpacity onPress={() => handleEditarExame(item)} style={{ marginRight: 8 }}>
-                    <Ionicons name="create-outline" size={20} color="#2196F3" />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleApagarExame(item.id)}>
-                    <Ionicons name="trash-outline" size={20} color="#FF5252" />
-                  </TouchableOpacity>
-                </View>
+      {loading ? (
+        <Text>Carregando exames...</Text>
+      ) : exames.length === 0 ? (
+        <Text>Nenhum exame encontrado.</Text>
+      ) : (
+        <FlatList
+          data={exames}
+          keyExtractor={item => item.id.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <View style={styles.iconBox}>
+                <Ionicons name={item.icon ? item.icon : "calendar-outline"} size={28} color="#377DFF" />
               </View>
-            )}
-            contentContainerStyle={{ paddingBottom: 24 }}
-          />
-        )}
-      </View>
+              <View style={styles.infoBox}>
+                <Text style={styles.examName}>{item.nome}</Text>
+                <Text style={styles.examDate}>Data: {item.data_prevista ? new Date(item.data_prevista).toLocaleDateString() : ""}</Text>
+                <Text style={[styles.examStatus, statusColor(item.status)]}>{item.status || ""}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => handleEditarExame(item)} style={{ marginRight: 8 }}>
+                  <Ionicons name="create-outline" size={20} color="#2196F3" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleApagarExame(item.id)}>
+                  <Ionicons name="trash-outline" size={20} color="#FF5252" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        />
+      )}
 
-      {/* Botão fixo na parte de baixo */}
+      {/* Botão de voltar removido daqui, agora está no topo */}
     </View>
   );
 }
@@ -230,21 +225,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  bottomButtonModal: {
-    backgroundColor: '#377DFF',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  bottomButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   modalContent: {
     backgroundColor: '#fff',
