@@ -1,9 +1,21 @@
+
 import React, { useState } from "react";
-import { TouchableOpacity, Text, StyleSheet, Platform } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, Platform, View, TextInput } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 
 interface DateInputProps {
   value: string;
   onChange: (date: string) => void;
+}
+
+function maskDate(text: string) {
+  // Remove tudo que não for número
+  let cleaned = text.replace(/\D/g, "");
+  if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
+  let masked = cleaned;
+  if (cleaned.length > 4) masked = `${cleaned.slice(0,2)}/${cleaned.slice(2,4)}/${cleaned.slice(4)}`;
+  else if (cleaned.length > 2) masked = `${cleaned.slice(0,2)}/${cleaned.slice(2)}`;
+  return masked;
 }
 
 export default function DateInputNative({ value, onChange }: DateInputProps) {
@@ -23,18 +35,29 @@ export default function DateInputNative({ value, onChange }: DateInputProps) {
 
   return (
     <>
-      <TouchableOpacity
-        style={[styles.input, { justifyContent: 'center' }]}
-        onPress={() => setShow(true)}
-        activeOpacity={0.8}
-      >
-        <Text style={{ color: value ? '#222' : '#888', fontSize: 15 }}>
-          {value ? value : 'Data prevista (dd/mm/yyyy)'}
-        </Text>
-      </TouchableOpacity>
+      <View style={{ position: 'relative', justifyContent: 'center' }}>
+        <TextInput
+          style={[styles.input, { paddingRight: 38 }]}
+          placeholder="Data prevista (dd/mm/yyyy)"
+          keyboardType="numeric"
+          value={value}
+          maxLength={10}
+          onChangeText={text => {
+            const masked = maskDate(text);
+            onChange(masked);
+          }}
+        />
+        <TouchableOpacity
+          onPress={() => setShow(true)}
+          style={styles.iconButton}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="calendar-outline" size={22} color="#377DFF" />
+        </TouchableOpacity>
+      </View>
       {show && DateTimePicker && (
         <DateTimePicker
-          value={value ? new Date(value.split('/').reverse().join('-')) : new Date()}
+          value={value && value.length === 10 ? new Date(value.split('/').reverse().join('-')) : new Date()}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           minimumDate={new Date()}
@@ -61,5 +84,16 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 12,
     fontSize: 15,
+    paddingRight: 38, // espaço para o ícone
+  },
+  iconButton: {
+    position: 'absolute',
+    right: 10,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    zIndex: 2,
   },
 });
