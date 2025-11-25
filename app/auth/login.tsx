@@ -122,15 +122,6 @@ export default function Login() {
             variant="primary"
             width="100%"
           />
-          <CustomButton
-            title="Entrar com Google"
-            onPress={handleGoogleLogin}
-            variant="secondary"
-            width="100%"
-            iconLeft={
-              <FontAwesome name="google" size={20} color={Colors.primary} />
-            }
-          />
         </View>
 
         <View style={loginStyle.dividerContainer}>

@@ -6,7 +6,8 @@ import FloatingChatButton from "@/components/FloatingChatButton";
 
 export default function RootLayout() {
   const segments = useSegments();
-  const isQuestRoute = segments.includes("quest");
+  const isQuestRoute = segments.some((segment) => segment === "quest");
+
   return (
     <UserProvider>
       <AlertProvider>

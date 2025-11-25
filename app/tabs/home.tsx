@@ -1,9 +1,12 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
 import type { ImageStyle } from "react-native";
 import {
+  ActivityIndicator,
   Image,
+  Linking,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -11,6 +14,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+import { useUserContext } from "@/contexts/UserContext";
+import { fetchNoticiasSaudeMasculina } from "@/services/api";
+import { fetchCheckups } from "@/services/checkupService";
+import { fetchHealthScore } from "@/services/userService";
+import { fetchDailyMood, MoodEntry } from "@/services/wellBeingService";
 
 // --- CORES KHORA ---
 const KHORA_COLORS = {
@@ -24,10 +33,6 @@ const KHORA_COLORS = {
 
 // --- Componentes Reutilizáveis ---
 
-import { fetchHealthScore } from "@/services/userService";
-import { fetchDailyMood } from "@/services/wellBeingService";
-import { useEffect, useState } from "react";
-
 // Componente para o Health Score
 const HealthScoreCard = ({ score }: { score: number }) => {
   // Garante que o valor fique entre 0 e 100
@@ -39,7 +44,9 @@ const HealthScoreCard = ({ score }: { score: number }) => {
         <Text style={scoreStyles.scoreText}>{progress}/100</Text>
       </View>
       <View style={scoreStyles.progressBarBackground}>
-        <View style={[scoreStyles.progressBarFill, { width: `${progress}%` }]} />
+        <View
+          style={[scoreStyles.progressBarFill, { width: `${progress}%` }]}
+        />
       </View>
       <Text style={scoreStyles.subtitle}>Atualizado com suas atividades</Text>
     </View>
@@ -53,22 +60,6 @@ interface ResumoItemProps {
   color?: string;
 }
 
-// Função para definir ícone e cor conforme tipo de humor
-function getMoodIconAndColor(type: string): { icon: keyof typeof Ionicons.glyphMap; color: string } {
-  switch (type?.toLowerCase()) {
-    case "feliz":
-      return { icon: "happy-outline", color: "#4CAF50" };
-    case "triste":
-      return { icon: "sad-outline", color: "#2196F3" };
-    case "ansioso":
-      return { icon: "alert-circle-outline", color: "#FF9800" };
-    case "irritado":
-      return { icon: "thunderstorm-outline", color: "#F44336" };
-    default:
-      return { icon: "happy-outline", color: KHORA_COLORS.primary };
-  }
-}
-
 // Componente para um item do Resumo do Dia (agora pode ser clicável)
 const ResumoItem: React.FC<ResumoItemProps & { onPress?: () => void }> = ({
   iconName,
@@ -79,8 +70,14 @@ const ResumoItem: React.FC<ResumoItemProps & { onPress?: () => void }> = ({
 }) => {
   const Wrapper = onPress ? TouchableOpacity : View;
   return (
-    <Wrapper style={resumoStyles.itemContainer} onPress={onPress} activeOpacity={0.7}>
-      <View style={[resumoStyles.iconWrapper, { backgroundColor: color + "22" }]}> 
+    <Wrapper
+      style={resumoStyles.itemContainer}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[resumoStyles.iconWrapper, { backgroundColor: color + "22" }]}
+      >
         <Ionicons name={iconName} size={28} color={color} />
       </View>
       <View style={resumoStyles.textWrapper}>
@@ -91,118 +88,320 @@ const ResumoItem: React.FC<ResumoItemProps & { onPress?: () => void }> = ({
   );
 };
 
+type QuickAction = {
+  id: string;
+  label: string;
+  subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+  color: string;
+  background: string;
+};
+
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: "habits",
+    label: "Hábitos",
+    subtitle: "Monitorar recaídas",
+    icon: "leaf-outline",
+    route: "/habitos",
+    color: "#10B981",
+    background: "#ECFDF5",
+  },
+  {
+    id: "metas",
+    label: "Metas",
+    subtitle: "Evolução semanal",
+    icon: "trending-up",
+    route: "/tabs/metas",
+    color: "#3B82F6",
+    background: "#E0F2FE",
+  },
+  {
+    id: "analise",
+    label: "Check-in",
+    subtitle: "Registrar humor",
+    icon: "pulse",
+    route: "/analiseEmocional",
+    color: "#F97316",
+    background: "#FFF7ED",
+  },
+  {
+    id: "coach",
+    label: "Coach",
+    subtitle: "Falar agora",
+    icon: "chatbubble-ellipses",
+    route: "/chat",
+    color: "#8B5CF6",
+    background: "#F3E8FF",
+  },
+];
+
+const moodVisualMap: Record<
+  string,
+  {
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+    label: string;
+    description: string;
+    emoji: string;
+  }
+> = {
+  feliz: {
+    icon: "happy-outline",
+    color: "#4CAF50",
+    label: "Feliz",
+    description: "Alta energia e motivação",
+    emoji: "😄",
+  },
+  bom: {
+    icon: "thumbs-up-outline",
+    color: "#3B82F6",
+    label: "Bem",
+    description: "Clima equilibrado",
+    emoji: "🙂",
+  },
+  neutro: {
+    icon: "remove-outline",
+    color: "#94A3B8",
+    label: "Neutro",
+    description: "Estável, atento ao corpo",
+    emoji: "😐",
+  },
+  ansioso: {
+    icon: "alert-circle-outline",
+    color: "#F59E0B",
+    label: "Ansioso",
+    description: "Respiração guiada recomendada",
+    emoji: "😰",
+  },
+  triste: {
+    icon: "sad-outline",
+    color: "#6366F1",
+    label: "Triste",
+    description: "Reserve um tempo para você",
+    emoji: "😔",
+  },
+  irritado: {
+    icon: "thunderstorm-outline",
+    color: "#EF4444",
+    label: "Irritado",
+    description: "Pratique pausas conscientes",
+    emoji: "😤",
+  },
+  ruim: {
+    icon: "cloud-outline",
+    color: "#EF4444",
+    label: "Difícil",
+    description: "Conte com o time Khora",
+    emoji: "😞",
+  },
+};
+
+const getMoodVisual = (value?: string | null) => {
+  if (!value) return moodVisualMap.neutro;
+  return moodVisualMap[value.toLowerCase()] ?? moodVisualMap.neutro;
+};
+
+const normalizeMoodValue = (entry: any) =>
+  entry?.mood ?? entry?.type ?? entry?.estado ?? "";
+
+const normalizeMoodDate = (entry: any) =>
+  entry?.createdAt ?? entry?.data ?? entry?.created_at ?? "";
+
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+const formatDateLabel = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+};
+
+const formatFullDate = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+  });
+};
+
 // --- TELA HOME PRINCIPAL ---
-
-
-import { fetchCheckups } from "@/services/checkupService";
 
 export default function Home() {
   const router = useRouter();
+  const { userName } = useUserContext();
+
   const [healthScore, setHealthScore] = useState<number | null>(null);
-  const [moodList, setMoodList] = useState<any[]>([]);
+  const [moodList, setMoodList] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState<string | null>(null);
-  const [news, setNews] = useState<any>(null);
+  const [news, setNews] = useState<any | null>(null);
   const [exameMaisProximo, setExameMaisProximo] = useState<any | null>(null);
 
-  const navigateToProfile = () => router.push("/perfil");
+  const displayName = useMemo(
+    () => (userName ? userName.split(" ")[0] : "Journey"),
+    [userName]
+  );
 
-  useEffect(() => {
-    async function fetchData() {
+  const profileInitial = useMemo(() => {
+    if (!displayName) return "K";
+    return displayName.trim().charAt(0).toUpperCase() || "K";
+  }, [displayName]);
+
+  const navigateToProfile = useCallback(() => {
+    router.push("/perfil");
+  }, [router]);
+
+  const loadHomeData = useCallback(
+    async (mode: "initial" | "refresh" = "initial") => {
+      if (mode === "initial") setLoading(true);
+      if (mode === "refresh") setRefreshing(true);
+
       try {
-        const scoreData = await fetchHealthScore();
+        const [scoreData, moodData, examesRes] = await Promise.all([
+          fetchHealthScore(),
+          fetchDailyMood(),
+          fetchCheckups(),
+        ]);
+
         let score = 0;
         if (typeof scoreData === "number") {
           score = scoreData;
-        } else if (scoreData && typeof (scoreData as { score?: number }).score === "number") {
+        } else if (
+          scoreData &&
+          typeof (scoreData as { score?: number }).score === "number"
+        ) {
           score = (scoreData as { score: number }).score;
         }
         setHealthScore(score);
-        const moodData = await fetchDailyMood();
+
         setMoodList(Array.isArray(moodData) ? moodData : []);
 
-        // Buscar exames e pegar o mais próximo
-        const examesRes = await fetchCheckups();
-        let examesArr = Array.isArray((examesRes as any)?.data) ? (examesRes as any).data : [];
-        examesArr = examesArr.filter((e: any) => !!e.data_prevista);
-        examesArr.sort((a: any, b: any) => new Date(a.data_prevista).getTime() - new Date(b.data_prevista).getTime());
+        let examesArr = Array.isArray((examesRes as any)?.data)
+          ? (examesRes as any).data
+          : Array.isArray(examesRes)
+          ? examesRes
+          : [];
+
+        examesArr = examesArr.filter((item: any) => !!item?.data_prevista);
+        examesArr.sort(
+          (a: any, b: any) =>
+            new Date(a.data_prevista).getTime() -
+            new Date(b.data_prevista).getTime()
+        );
+
         const hoje = new Date();
-        const exameProx = examesArr.find((e: any) => new Date(e.data_prevista) >= hoje) || examesArr[0] || null;
-        setExameMaisProximo(exameProx);
-      } catch (err) {
-        setHealthScore(0);
-        setMoodList([]);
-        setExameMaisProximo(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-    // Fetch GNews
-    async function fetchNews() {
-      try {
-        setNewsLoading(true);
-        setNewsError(null);
-        const res = await fetch("https://gnews.io/api/v4/search?q=saúde%20masculina&lang=pt&max=10&token=6bad04f0031163c67d7ecd9ac59184ff");
-        const data = await res.json();
-        if (data.articles && data.articles.length > 0) {
-          setNews(data.articles[0]);
-        } else {
-          setNewsError("Nenhuma notícia encontrada.");
+        const exameProximo =
+          examesArr.find((item: any) => new Date(item.data_prevista) >= hoje) ||
+          examesArr[0] ||
+          null;
+        setExameMaisProximo(exameProximo ?? null);
+      } catch (error) {
+        console.warn("Erro ao carregar informações da home", error);
+        if (mode === "initial") {
+          setHealthScore((prev) => prev ?? 0);
+          setMoodList([]);
+          setExameMaisProximo(null);
         }
-      } catch (err) {
-        setNewsError("Erro ao buscar notícia.");
       } finally {
-        setNewsLoading(false);
+        if (mode === "initial") setLoading(false);
+        if (mode === "refresh") setRefreshing(false);
       }
+    },
+    []
+  );
+
+  const loadNews = useCallback(async () => {
+    setNewsLoading(true);
+    setNewsError(null);
+    try {
+      const articles = await fetchNoticiasSaudeMasculina();
+      if (Array.isArray(articles) && articles.length > 0) {
+        setNews(articles[0]);
+      } else {
+        setNews(null);
+        setNewsError("Nenhuma notícia encontrada.");
+      }
+    } catch (error) {
+      console.warn("Erro ao buscar notícias", error);
+      setNewsError("Erro ao buscar notícia.");
+    } finally {
+      setNewsLoading(false);
     }
-    fetchNews();
   }, []);
 
-  // Mapeamento dos moods para o resumo, ajustando ícone/cor
-  // Lógica para o card de humor: se já fez hoje, mostra o humor, senão pede para fazer
-  let humorCard;
-  const hoje = new Date();
-  const hojeStr = hoje.toISOString().split('T')[0];
-  const moodHoje = moodList.find((m) => {
-    if (!m.createdAt && !m.data) return false;
-    // createdAt pode ser string ou Date
-    const data = m.createdAt || m.data;
-    const dataStr = (typeof data === 'string' ? data : data.toISOString()).split('T')[0];
-    return dataStr === hojeStr;
-  });
-  if (moodHoje) {
-    const { icon, color } = getMoodIconAndColor(moodHoje.type);
-    humorCard = {
-      iconName: icon,
-      title: moodHoje.type || "Humor",
-      subtitle: moodHoje.description || "Check-in de humor completo",
-      color,
-      onPress: undefined, // não é clicável se já fez
-    };
-  } else {
-    humorCard = {
-      iconName: "happy-outline",
-      title: "Humor",
-      subtitle: "Faça seu check-in de humor",
-      color: KHORA_COLORS.primary,
-      onPress: () => router.push("/analiseEmocional"),
-    };
-  }
+  useEffect(() => {
+    loadHomeData();
+    loadNews();
+  }, [loadHomeData, loadNews]);
 
-  const resumoItems = [
-    {
-      iconName: "calendar-outline",
-      title: "Check-up Anual",
-      subtitle: exameMaisProximo && exameMaisProximo.data_prevista
-        ? `Próximo exame: ${new Date(exameMaisProximo.data_prevista).toLocaleDateString('pt-BR')}`
-        : "Nenhum exame encontrado",
-      color: KHORA_COLORS.primary,
-      // sem onPress, apenas visual
-    },
-    humorCard,
-  ];
+  const onRefresh = useCallback(() => {
+    Promise.allSettled([loadHomeData("refresh"), loadNews()]);
+  }, [loadHomeData, loadNews]);
+
+  const moodTodayEntry = useMemo(() => {
+    const today = new Date();
+    return moodList.find((entry) => {
+      const entryDate = normalizeMoodDate(entry);
+      if (!entryDate) return false;
+      const parsed = new Date(entryDate);
+      if (Number.isNaN(parsed.getTime())) return false;
+      return isSameDay(today, parsed);
+    });
+  }, [moodList]);
+
+  const moodHistory = useMemo(() => moodList.slice(0, 4), [moodList]);
+
+  const moodSummaryMeta = moodTodayEntry
+    ? getMoodVisual(normalizeMoodValue(moodTodayEntry))
+    : null;
+
+  const resumoItems = useMemo(() => {
+    const items: Array<ResumoItemProps & { onPress?: () => void }> = [
+      {
+        iconName: "calendar-outline",
+        title: "Check-up Anual",
+        subtitle: exameMaisProximo?.data_prevista
+          ? `Próximo exame: ${formatFullDate(exameMaisProximo.data_prevista)}`
+          : "Nenhum exame encontrado",
+        color: KHORA_COLORS.primary,
+        onPress: () => router.push("/exames" as any),
+      },
+    ];
+
+    if (moodSummaryMeta) {
+      items.push({
+        iconName: moodSummaryMeta.icon,
+        title: moodSummaryMeta.label,
+        subtitle: moodSummaryMeta.description,
+        color: moodSummaryMeta.color,
+      });
+    } else {
+      items.push({
+        iconName: "happy-outline",
+        title: "Humor",
+        subtitle: "Faça seu check-in de humor",
+        color: KHORA_COLORS.primary,
+        onPress: () => router.push("/analiseEmocional" as any),
+      });
+    }
+
+    return items;
+  }, [exameMaisProximo, moodSummaryMeta, router]);
+
+  const handleNewsPress = useCallback(() => {
+    if (news?.url) {
+      Linking.openURL(news.url);
+    }
+  }, [news?.url]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -211,26 +410,76 @@ export default function Home() {
           style={styles.profileButton}
           onPress={navigateToProfile}
         >
-          <Image
-            style={styles.profileImage}
-            source={require("../../assets/images/cara.jpg")}
-            alt="Imagem de Perfil"
-          />
+          <View style={styles.profileImage}>
+            <Text style={styles.profileInitial}>{profileInitial}</Text>
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Khora</Text>
       </View>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[KHORA_COLORS.primary]}
+            tintColor={KHORA_COLORS.primary}
+          />
+        }
       >
+        <View style={styles.heroCard}>
+          <View>
+            <Text style={styles.heroGreeting}>Oi, {displayName}</Text>
+            <Text style={styles.heroSubtitle}>
+              Veja um panorama rápido da sua jornada hoje
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.sectionTitle}>Seu Health Score</Text>
         {loading ? (
-          <Text>Carregando...</Text>
+          <View style={styles.loadingCard}>
+            <ActivityIndicator color={KHORA_COLORS.primary} />
+          </View>
         ) : (
           <HealthScoreCard score={healthScore ?? 0} />
         )}
 
-        <Text style={styles.sectionTitle}>Resumo do Dia</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Ações rápidas</Text>
+        </View>
+        <View style={styles.quickActionsRow}>
+          {QUICK_ACTIONS.map((action) => (
+            <TouchableOpacity
+              key={action.id}
+              style={[
+                styles.quickActionCard,
+                { backgroundColor: action.background },
+              ]}
+              onPress={() => router.push(action.route as any)}
+              activeOpacity={0.85}
+            >
+              <View
+                style={[
+                  styles.quickActionIcon,
+                  { backgroundColor: `${action.color}22` },
+                ]}
+              >
+                <Ionicons name={action.icon} size={20} color={action.color} />
+              </View>
+              <Text style={styles.quickActionLabel}>{action.label}</Text>
+              <Text style={styles.quickActionSubtitle}>{action.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Resumo do Dia</Text>
+          <TouchableOpacity onPress={() => router.push("/tabs/saude" as any)}>
+            <Text style={styles.sectionAction}>Ver saúde</Text>
+          </TouchableOpacity>
+        </View>
         <View style={resumoStyles.container}>
           {resumoItems.map((item, idx) => (
             <React.Fragment key={idx}>
@@ -241,25 +490,84 @@ export default function Home() {
                 color={item.color}
                 onPress={item.onPress}
               />
-              {idx < resumoItems.length - 1 && <View style={resumoStyles.divider} />}
+              {idx < resumoItems.length - 1 && (
+                <View style={resumoStyles.divider} />
+              )}
             </React.Fragment>
           ))}
         </View>
 
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Histórico emocional</Text>
+          <TouchableOpacity onPress={() => router.push("/saude" as any)}>
+            <Text style={styles.sectionAction}>Ver tudo</Text>
+          </TouchableOpacity>
+        </View>
+        {loading ? (
+          <ActivityIndicator
+            color={KHORA_COLORS.primary}
+            style={{ marginVertical: 12 }}
+          />
+        ) : moodHistory.length ? (
+          <View style={styles.moodHistoryList}>
+            {moodHistory.map((entry) => {
+              const meta = getMoodVisual(normalizeMoodValue(entry));
+              return (
+                <View key={entry.id} style={styles.moodHistoryChip}>
+                  <Text style={styles.moodHistoryEmoji}>{meta.emoji}</Text>
+                  <View>
+                    <Text style={styles.moodHistoryLabel}>{meta.label}</Text>
+                    <Text style={styles.moodHistoryDate}>
+                      {formatDateLabel(normalizeMoodDate(entry))}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <Text style={styles.emptyStateText}>
+            Registre seu humor para visualizar tendências.
+          </Text>
+        )}
+
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Rotina de cuidados</Text>
+          <TouchableOpacity onPress={() => router.push("/exames" as any)}>
+            <Text style={styles.sectionAction}>Abrir agenda</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.nextExamCard}>
+          <View style={styles.nextExamIcon}>
+            <Ionicons name="calendar" size={22} color={KHORA_COLORS.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.nextExamLabel}>
+              {exameMaisProximo?.data_prevista
+                ? formatFullDate(exameMaisProximo.data_prevista)
+                : "Sem exames programados"}
+            </Text>
+            <Text style={styles.nextExamSubtitle}>
+              {exameMaisProximo?.local ||
+                exameMaisProximo?.descricao ||
+                "Agende novos checkups para manter o ritmo"}
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.sectionTitle}>Pílula de Conhecimento</Text>
         {newsLoading ? (
-          <Text style={{ marginVertical: 10 }}>Carregando notícia...</Text>
+          <ActivityIndicator
+            color={KHORA_COLORS.primary}
+            style={{ marginVertical: 12 }}
+          />
         ) : newsError ? (
-          <Text style={{ color: 'red', marginVertical: 10 }}>{newsError}</Text>
+          <Text style={{ color: "red", marginVertical: 10 }}>{newsError}</Text>
         ) : news ? (
           <TouchableOpacity
             style={knowledgeStyles.card}
-            activeOpacity={0.8}
-            onPress={() => {
-              if (news.url) {
-                // Abrir link externo
-              }
-            }}
+            activeOpacity={news?.url ? 0.85 : 1}
+            onPress={handleNewsPress}
           >
             {news.image ? (
               <Image
@@ -271,13 +579,18 @@ export default function Home() {
             <View style={knowledgeStyles.textContainer}>
               <Text style={knowledgeStyles.articleTag}>Artigo</Text>
               <Text style={knowledgeStyles.title}>{news.title}</Text>
-              <Text style={knowledgeStyles.description}>{news.description}</Text>
-              <Text style={{ color: '#3b82f6', marginTop: 6 }}>
-                {news.source?.name} {!!news.publishedAt && `• ${new Date(news.publishedAt).toLocaleDateString()}`}
+              <Text style={knowledgeStyles.description}>
+                {news.description}
+              </Text>
+              <Text style={{ color: KHORA_COLORS.primary, marginTop: 6 }}>
+                {news.source?.name}{" "}
+                {!!news.publishedAt &&
+                  `• ${new Date(news.publishedAt).toLocaleDateString()}`}
               </Text>
             </View>
           </TouchableOpacity>
         ) : null}
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -295,6 +608,43 @@ const styles = StyleSheet.create({
     // REMOVIDO: O padding superior, pois o header fixo já define o espaço
     paddingTop: 0,
     paddingBottom: 25,
+  },
+  heroCard: {
+    backgroundColor: KHORA_COLORS.cardBg,
+    borderRadius: 18,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  heroGreeting: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: KHORA_COLORS.darkText,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: KHORA_COLORS.secondaryText,
+    marginTop: 6,
+    maxWidth: 220,
+  },
+  heroButton: {
+    backgroundColor: KHORA_COLORS.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  heroButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 13,
   },
   headerContainer: {
     // ESTILOS PARA TORNAR O HEADER FIXO E COM BACKGROUND
@@ -324,6 +674,13 @@ const styles = StyleSheet.create({
     backgroundColor: KHORA_COLORS.primary,
     borderWidth: 1,
     borderColor: KHORA_COLORS.lightBlueBg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileInitial: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
   },
   headerTitle: {
     fontSize: 24,
@@ -338,6 +695,124 @@ const styles = StyleSheet.create({
     color: KHORA_COLORS.darkText,
     marginBottom: 15,
     marginTop: 10,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  sectionAction: {
+    fontSize: 14,
+    color: KHORA_COLORS.primary,
+    fontWeight: "600",
+  },
+  loadingCard: {
+    backgroundColor: KHORA_COLORS.cardBg,
+    borderRadius: 15,
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 25,
+  },
+  quickActionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 10,
+  },
+  quickActionCard: {
+    flex: 1,
+    minWidth: "45%",
+    borderRadius: 14,
+    padding: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  quickActionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  quickActionLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: KHORA_COLORS.darkText,
+  },
+  quickActionSubtitle: {
+    fontSize: 13,
+    color: KHORA_COLORS.secondaryText,
+    marginTop: 2,
+  },
+  moodHistoryList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 10,
+  },
+  moodHistoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: KHORA_COLORS.cardBg,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: KHORA_COLORS.divider,
+  },
+  moodHistoryEmoji: {
+    fontSize: 22,
+  },
+  moodHistoryLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: KHORA_COLORS.darkText,
+  },
+  moodHistoryDate: {
+    fontSize: 12,
+    color: KHORA_COLORS.secondaryText,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: KHORA_COLORS.secondaryText,
+    marginBottom: 16,
+  },
+  nextExamCard: {
+    backgroundColor: KHORA_COLORS.cardBg,
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderWidth: 1,
+    borderColor: KHORA_COLORS.divider,
+    marginBottom: 10,
+  },
+  nextExamIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: KHORA_COLORS.lightBlueBg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  nextExamLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: KHORA_COLORS.darkText,
+  },
+  nextExamSubtitle: {
+    fontSize: 13,
+    color: KHORA_COLORS.secondaryText,
+    marginTop: 4,
   },
 });
 

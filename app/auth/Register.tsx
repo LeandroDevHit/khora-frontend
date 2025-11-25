@@ -121,15 +121,6 @@ export default function Register() {
             variant="primary"
             width="100%"
           />
-          <CustomButton
-            title="Cadastrar com Google"
-            onPress={handleGoogleRegister}
-            variant="secondary"
-            width="100%"
-            iconLeft={
-              <FontAwesome name="google" size={20} color={Colors.primary} />
-            }
-          />
         </View>
 
         <View style={registerStyle.dividerContainer}>

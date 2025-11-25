@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { usePushNotifications } from "../hooks/usePushNotifications";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export default function TabLayout() {
-
   // Inicializa push notifications
   const { expoPushToken } = usePushNotifications();
   console.log("Expo push token:", expoPushToken);

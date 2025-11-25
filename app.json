@@ -17,6 +17,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.leandrohit.khorafrontend",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -45,14 +46,10 @@
       "typedRoutes": true
     },
     "extra": {
-<<<<<<< HEAD
-      "API_BASE_URL": "http://192.168.0.8:3200/api",
+      "API_BASE_URL": "http://10.0.2.2:3200/api",
       "eas": {
-        "projectId": "21a61c0a-70a8-4bd5-a001-40643714f5e8"
-      }
-=======
-      "API_BASE_URL": "http://192.168.15.8:3200/api"
->>>>>>> parent of 412f37a (Foi adicionada a dependência @react-native-async-storage/async-storage e criados novos serviços para organizar melhor a lógica do app:)
+          "projectId": "21a61c0a-70a8-4bd5-a001-40643714f5e8"
+        }
     }
   }
 }
