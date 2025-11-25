@@ -1,9 +1,9 @@
 
 
-import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, SafeAreaView } from "react-native";
-import { Camera, CameraView } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
+import { Camera, CameraView } from "expo-camera";
+import React, { useRef, useState } from "react";
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 
 export default function AnaliseEmocional() {
@@ -22,12 +22,71 @@ export default function AnaliseEmocional() {
 
   const handleAnalyze = async () => {
     setLoading(true);
-    // Simulação de análise facial
-    setTimeout(() => {
-      setEmotion("Feliz 😊");
-      setLoading(false);
-      setShowCamera(false);
-    }, 2000);
+    try {
+      if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.3 });
+        // Upload para imgbb
+        const imgbbKey = '14297fccfed107c09da9fb3d7a4dc609';
+        let base64Clean = photo.base64;
+        if (base64Clean.startsWith('data:image')) {
+          base64Clean = base64Clean.substring(base64Clean.indexOf(',') + 1);
+        }
+        const imgbbBody = `key=${imgbbKey}&image=${encodeURIComponent(base64Clean)}`;
+        const imgbbRes = await fetch('https://api.imgbb.com/1/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: imgbbBody,
+        });
+        const imgbbJson = await imgbbRes.json();
+        console.log('imgbb response:', imgbbJson);
+        if (!imgbbJson.success || !imgbbJson.data || !imgbbJson.data.url) {
+          setEmotion('Erro ao fazer upload da imagem: ' + JSON.stringify(imgbbJson));
+          setLoading(false);
+          setShowCamera(false);
+          return;
+        }
+        const imageUrl = imgbbJson.data.url;
+        // Exibir URL para depuração
+        setEmotion('URL da imagem: ' + imageUrl);
+        // Chamada Face++
+        const apiUrl = 'https://api-us.faceplusplus.com/facepp/v3/detect';
+        const apiKey = 'u3OrAPj4DBfptz8YCaYqy4v6CnvxVqOk';
+        const apiSecret = 'i1R9sngj2vKc2TbLLBL4CbYeIFd1UMhd';
+        const formData = new FormData();
+        formData.append('api_key', apiKey);
+        formData.append('api_secret', apiSecret);
+        formData.append('image_url', imageUrl);
+        formData.append('return_attributes', 'emotion');
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        setEmotion('Face++ response: ' + JSON.stringify(data, null, 2));
+        if (data.faces && data.faces.length > 0 && data.faces[0].attributes && data.faces[0].attributes.emotion) {
+          const emotions = data.faces[0].attributes.emotion as Record<string, number>;
+          const sorted = Object.entries(emotions).sort((a, b) => b[1] - a[1]);
+          const [emotionName, emotionScore] = sorted[0];
+          setEmotion(`${emotionName.charAt(0).toUpperCase() + emotionName.slice(1)} (${emotionScore.toFixed(1)}%)`);
+        } else {
+          setEmotion('Não foi possível identificar emoção. Face++: ' + JSON.stringify(data, null, 2));
+        }
+      }
+    } catch (err) {
+      let errorMsg = '';
+      if (err instanceof Error) {
+        errorMsg = err.message + (err.stack ? '\n' + err.stack : '');
+      } else if (typeof err === 'object') {
+        errorMsg = JSON.stringify(err, null, 2);
+      } else {
+        errorMsg = String(err);
+      }
+      setEmotion('Erro na análise: ' + errorMsg);
+    }
+    setLoading(false);
+    setShowCamera(false);
   };
 
   return (
@@ -79,8 +138,10 @@ export default function AnaliseEmocional() {
         {emotion && !showCamera && (
           <View style={styles.resultBox}>
             <Ionicons name="sparkles-outline" size={28} color="#10B981" style={{marginBottom: 6}} />
-            <Text style={styles.resultText}>Emoção detectada:</Text>
-            <Text style={styles.resultEmotion}>{emotion}</Text>
+            <Text style={styles.resultText}>Emoção detectada / Log:</Text>
+            <ScrollView style={{ maxHeight: 200, width: '100%' }}>
+              <Text style={styles.resultEmotion}>{emotion}</Text>
+            </ScrollView>
             <TouchableOpacity style={styles.tryAgainButton} onPress={() => { setEmotion(null); setShowCamera(false); }}>
               <Ionicons name="refresh" size={18} color="#3B82F6" style={{marginRight: 4}} />
               <Text style={styles.tryAgainText}>Tentar novamente</Text>
