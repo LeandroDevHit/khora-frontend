@@ -1,10 +1,12 @@
 import { AlertProvider } from "@/contexts/AlertContext";
 import { UserProvider } from "@/contexts/UserContext";
-import { Stack } from "expo-router";
+import { Stack, useSegments } from "expo-router";
 import React from "react";
 import FloatingChatButton from "@/components/FloatingChatButton";
 
 export default function RootLayout() {
+  const segments = useSegments();
+  const isQuestRoute = segments.includes("quest");
   return (
     <UserProvider>
       <AlertProvider>
@@ -13,7 +15,7 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
-        <FloatingChatButton />
+        {!isQuestRoute && <FloatingChatButton />}
       </AlertProvider>
     </UserProvider>
   );
