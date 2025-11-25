@@ -52,7 +52,7 @@ export default function AnaliseEmocional() {
         setEmotion('URL da imagem: ' + imageUrl);
         // Chamada Face++
         const apiUrl = 'https://api-us.faceplusplus.com/facepp/v3/detect';
-        const apiKey = 'u3OrAPj4DBfptz8YCaYqy4v6CnvxVqOk';
+        const apiKey = 'u30rAPj4DBfptz8YCaYqy4v6CnvxVqOk';
         const apiSecret = 'i1R9sngj2vKc2TbLLBL4CbYeIFd1UMhd';
         const formData = new FormData();
         formData.append('api_key', apiKey);
@@ -69,7 +69,17 @@ export default function AnaliseEmocional() {
           const emotions = data.faces[0].attributes.emotion as Record<string, number>;
           const sorted = Object.entries(emotions).sort((a, b) => b[1] - a[1]);
           const [emotionName, emotionScore] = sorted[0];
-          setEmotion(`${emotionName.charAt(0).toUpperCase() + emotionName.slice(1)} (${emotionScore.toFixed(1)}%)`);
+          const emotionMap: Record<string, string> = {
+            happiness: 'Felicidade',
+            sadness: 'Tristeza',
+            neutral: 'Neutro',
+            disgust: 'Nojo',
+            fear: 'Medo',
+            anger: 'Raiva',
+            surprise: 'Surpresa',
+          };
+          const emotionPt = emotionMap[emotionName.toLowerCase()] || emotionName;
+          setEmotion(`${emotionPt} (${emotionScore.toFixed(1)}%)`);
         } else {
           setEmotion('Não foi possível identificar emoção. Face++: ' + JSON.stringify(data, null, 2));
         }
