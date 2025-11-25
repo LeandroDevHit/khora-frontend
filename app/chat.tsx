@@ -16,10 +16,9 @@ import {
   useWindowDimensions,
   View,
   Animated,
-  Keyboard,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { styles } from "@/components/ChatStyles";
+import { styles } from "../components/ChatStyles";
 
 // Tipos de resposta esperados da API do chatbot
 interface StartChatResponse {
@@ -82,28 +81,12 @@ export default function ChatScreen() {
     setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 80);
   }, [messages]);
 
-  // Scroll automático quando o teclado aparecer
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-    };
-  }, []);
-
-  // Inicializa conversa ao montar (apenas mensagem de boas-vindas)
   useEffect(() => {
     async function initChat() {
       setInitializing(true);
       setErrorMessage(null);
       try {
-        // Inicia com uma mensagem de saudação automática
-        const initialMessage = "Olá";
+        const initialMessage = "Iniciar conversa";
         const response = (await startChatBot(
           userId || "",
           userName || "",
@@ -130,7 +113,7 @@ export default function ChatScreen() {
         setMessages([
           {
             id: String(Date.now()),
-            text: "Falha ao conectar ao assistente. Você pode tentar enviar sua mensagem mesmo assim.",
+            text: "Falha ao conectar ao assistente. Você pode tentar enviar mesmo assim.",
             fromUser: false,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
@@ -156,74 +139,42 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, userMsg]);
     setLoadingSend(true);
     setErrorMessage(null);
-    
     try {
       let cid = conversationId;
-      
-      // Se não há conversationId, inicia uma nova conversa
       if (!cid) {
         const initResp = (await startChatBot(
           userId || "",
           userName || "",
-          textToSend // Envia a primeira mensagem do usuário para iniciar
+          ""
         )) as StartChatResponse | undefined | null;
         cid = initResp?.conversationId || initResp?.id || null;
         if (cid) setConversationId(cid);
-        
-        // Extrai a resposta do bot da inicialização
-        const raw =
-          initResp?.message ??
-          (initResp as any)?.response ??
-          (initResp as any)?.data?.message ??
-          (typeof initResp === "string" ? initResp : undefined);
-
-        let botText = "(Sem resposta)";
-        if (raw !== undefined && raw !== null) {
-          botText = typeof raw === "string" ? raw : JSON.stringify(raw);
-        }
-        
-        const botMsg: Message = {
-          id: String(Date.now() + 1),
-          text: botText,
-          fromUser: false,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, botMsg]);
-      } else {
-        // Se já existe conversationId, continua a conversa
-        const botResp = (await sendChatbotMessage(
-          userId || "",
-          userName || "",
-          textToSend,
-          cid // Passa o conversationId para manter a continuidade
-        )) as ChatMessageResponse | undefined | null;
-        
-        // Extrai texto da resposta
-        const raw =
-          botResp?.message ??
-          botResp?.response ??
-          (botResp as any)?.data?.message ??
-          (botResp as any)?.data?.response ??
-          (typeof botResp === "string" ? botResp : undefined);
-
-        let botText = "(Sem resposta)";
-        if (raw !== undefined && raw !== null) {
-          botText = typeof raw === "string" ? raw : JSON.stringify(raw);
-        }
-        
-        const botMsg: Message = {
-          id: String(Date.now() + 1),
-          text: botText,
-          fromUser: false,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, botMsg]);
-        
-        // Atualiza conversationId se o backend retornar um novo
-        if (botResp?.conversationId && botResp.conversationId !== cid) {
-          setConversationId(botResp.conversationId);
-        }
       }
+      const botResp = (await sendChatbotMessage(
+        userId || "",
+        userName || "",
+        textToSend
+      )) as ChatMessageResponse | undefined | null;
+      const raw =
+        botResp?.message ??
+        botResp?.response ??
+        (botResp as any)?.data?.message ??
+        (botResp as any)?.data?.response ??
+        (typeof botResp === "string" ? botResp : undefined);
+
+      let botText = "(Sem resposta)";
+      if (raw !== undefined && raw !== null) {
+        botText = typeof raw === "string" ? raw : JSON.stringify(raw);
+      }
+      const botMsg: Message = {
+        id: String(Date.now() + 1),
+        text: botText,
+        fromUser: false,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, botMsg]);
+      if (!cid && botResp?.conversationId)
+        setConversationId(botResp.conversationId);
     } catch (err: any) {
       setErrorMessage(
         err?.response?.data?.message ||
@@ -399,9 +350,8 @@ export default function ChatScreen() {
 
           {/* Input aprimorado */}
           <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-            style={{ flex: 0 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={90}
           >
             <View style={[styles.inputRow, isWide && { paddingHorizontal: 32 }]}>
               <View style={[styles.inputPill, isWide && { maxWidth: 720 }]}>

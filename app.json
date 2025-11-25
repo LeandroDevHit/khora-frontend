@@ -31,13 +31,24 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logoKhora.png",
+          "color": "#ffffff"
+        }
+      ],
+      "expo-firebase-core"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL": "http://192.168.0.8:3200/api"
+      "API_BASE_URL": "http://192.168.0.8:3200/api",
+      "eas": {
+        "projectId": "21a61c0a-70a8-4bd5-a001-40643714f5e8"
+      }
     }
   }
 }
