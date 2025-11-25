@@ -1,13 +1,13 @@
 import * as Linking from 'expo-linking';
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -156,7 +156,7 @@ export default function Conteudo2() {
     async function fetchNoticias() {
       setLoading(true);
       try {
-        const res = await fetch('https://gnews.io/api/v4/search?q=saúde%20masculina&lang=pt&max=10&token=dcf10bde187ec1bda0c4b4e62c708bc3');
+        const res = await fetch('https://gnews.io/api/v4/search?q=saúde%20masculina&lang=pt&max=10&token=6bad04f0031163c67d7ecd9ac59184ff');
         const data = await res.json();
         if (data.articles && Array.isArray(data.articles)) {
           setNoticias(data.articles);
