@@ -45,14 +45,6 @@ export default function Prevencao() {
         {/* Espaço maior antes do conteúdo */}
         <View style={{ height: 40 }} />
 
-        {/* Botão */}
-        <TouchableOpacity style={styles.button} onPress={() => router.push("/exames") }>
-          <Text style={styles.buttonText}>Ver Meus Exames</Text>
-        </TouchableOpacity>
-
-        {/* Espaço após botão */}
-        <View style={{ height: 18 }} />
-
         {/* Card explicativo */}
         <View style={styles.infoCard}>
           <Text style={styles.infoCardLink}>Por que isso importa?</Text>
@@ -66,7 +58,7 @@ export default function Prevencao() {
         <View style={{ height: 18 }} />
 
         {/* Calendário de consultas centralizado */}
-        <View style={{ marginBottom: 18, alignItems: 'center' }}>
+        <View style={{ marginBottom: 0, alignItems: 'center' }}>
           {loading ? (
             <Text>Carregando exames...</Text>
           ) : exames.length === 0 ? (
@@ -102,6 +94,13 @@ export default function Prevencao() {
               }}
             />
           )}
+        </View>
+
+        {/* Botão Ver Meus Exames abaixo do calendário */}
+        <View style={{ marginTop: 18, marginBottom: 18 }}>
+          <TouchableOpacity style={[styles.button, { width: '100%', alignSelf: 'center' }]} onPress={() => router.push("/exames") }>
+            <Text style={styles.buttonText}>Ver Meus Exames</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Modal de detalhes da consulta */}
